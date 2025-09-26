@@ -1,21 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Search, MapPin, Calendar } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { DateRangePicker } from '@/components/ui/DateRangePicker';
 import { motion } from 'framer-motion';
 
 export const HeroSection: React.FC = () => {
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [dateRange, setDateRange] = React.useState<[Date | null, Date | null]>([null, null]);
-
-  const handleSearch = () => {
-    // TODO: Implement search functionality
-    console.log('Search:', { searchQuery, dateRange });
-  };
-
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10">
       {/* Background Pattern */}
@@ -36,7 +24,7 @@ export const HeroSection: React.FC = () => {
           >
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold font-playfair text-gray-900 mb-6">
               Find Your Perfect
-              <span className="block bg-gradient-primary bg-clip-text text-transparent">
+              <span className="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Short-Term Rental
               </span>
             </h1>
@@ -45,57 +33,19 @@ export const HeroSection: React.FC = () => {
             </p>
           </motion.div>
 
-          {/* Search Form */}
+          {/* CTA Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="bg-white rounded-2xl shadow-2xl p-8 max-w-4xl mx-auto"
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Location Input */}
-              <div className="md:col-span-1">
-                <Input
-                  label="Where"
-                  placeholder="Search destinations"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  leftIcon={<MapPin size={20} className="text-gray-400" />}
-                />
-              </div>
-
-              {/* Date Range Picker */}
-              <div className="md:col-span-1">
-                <DateRangePicker
-                  label="When"
-                  placeholder="Select dates"
-                  value={dateRange}
-                  onChange={setDateRange}
-                />
-              </div>
-
-              {/* Guests Input */}
-              <div className="md:col-span-1">
-                <Input
-                  label="Guests"
-                  placeholder="How many?"
-                  type="number"
-                  min="1"
-                  max="20"
-                />
-              </div>
-
-              {/* Search Button */}
-              <div className="md:col-span-1 flex items-end">
-                <Button
-                  onClick={handleSearch}
-                  className="w-full h-12 text-lg"
-                  leftIcon={<Search size={20} />}
-                >
-                  Search
-                </Button>
-              </div>
-            </div>
+            <button className="btn-primary px-8 py-4 text-lg">
+              Start Planning
+            </button>
+            <button className="btn-secondary px-8 py-4 text-lg">
+              Browse Experiences
+            </button>
           </motion.div>
 
           {/* Trust Indicators */}
