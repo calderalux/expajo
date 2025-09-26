@@ -1,3 +1,4 @@
+import { Layout } from '@/components/layout/Layout';
 import { HeroSection } from '@/components/sections/HeroSection';
 import { CategoriesSection } from '@/components/sections/CategoriesSection';
 import { FeaturedListSection } from '@/components/sections/FeaturedListSection';
@@ -7,13 +8,13 @@ import { CTASection } from '@/components/sections/CTASection';
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen">
+    <Layout>
       <HeroSection />
       <CategoriesSection />
       <FeaturedListSection />
       <BenefitsSection />
       <ReviewsSection />
       <CTASection />
-    </main>
+    </Layout>
   );
 }
