@@ -113,7 +113,7 @@ export const SimpleLoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading 
 
           <div className="text-center">
             <span className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <button
                 type="button"
                 className="text-primary hover:text-primary/80 font-medium transition-colors"

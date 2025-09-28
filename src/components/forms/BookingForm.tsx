@@ -1,13 +1,18 @@
 'use client';
 
-import React from 'react';
-import { useForm } from '@tanstack/react-form';
-import { zodValidator } from '@tanstack/zod-form-adapter';
-import { bookingSchema, type BookingFormData } from '@/lib/validations';
-import { FormField } from './FormField';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
 import { Calendar, Users, MessageSquare } from 'lucide-react';
+
+export interface BookingFormData {
+  listingId: string;
+  startDate: Date;
+  endDate: Date;
+  guests: number;
+  specialRequests: string;
+}
 
 interface BookingFormProps {
   listingId: string;
@@ -22,26 +27,10 @@ export const BookingForm: React.FC<BookingFormProps> = ({
   onSubmit,
   isLoading = false,
 }) => {
-  const form = useForm({
-    defaultValues: {
-      listingId,
-      startDate: undefined as Date | undefined,
-      endDate: undefined as Date | undefined,
-      guests: 1,
-      specialRequests: '',
-    },
-    validatorAdapter: zodValidator(),
-    validators: {
-      onChange: bookingSchema,
-    },
-    onSubmit: async ({ value }) => {
-      onSubmit(value);
-    },
-  });
-
-  const startDate = form.useStore((state) => state.values.startDate);
-  const endDate = form.useStore((state) => state.values.endDate);
-  const guests = form.useStore((state) => state.values.guests);
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
+  const [guests, setGuests] = useState(1);
+  const [specialRequests, setSpecialRequests] = useState('');
 
   const calculateTotal = () => {
     if (!startDate || !endDate) return 0;
@@ -54,6 +43,21 @@ export const BookingForm: React.FC<BookingFormProps> = ({
     return Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (startDate && endDate) {
+      onSubmit({
+        listingId,
+        startDate,
+        endDate,
+        guests,
+        specialRequests,
+      });
+    }
+  };
+
+  const isFormValid = startDate && endDate && guests > 0;
+
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
@@ -63,81 +67,55 @@ export const BookingForm: React.FC<BookingFormProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            form.handleSubmit();
-          }}
-          className="space-y-6"
-        >
-          <form.Field
-            name="startDate"
-            validators={{
-              onChange: bookingSchema.shape.startDate,
-            }}
-          >
-            {(field) => (
-              <FormField
-                field={field}
-                label="Check-in Date"
-                type="date"
-                placeholder="Select check-in date"
-                leftIcon={<Calendar size={20} className="text-gray-400" />}
-              />
-            )}
-          </form.Field>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <Input
+              label="Check-in Date"
+              type="date"
+              placeholder="Select check-in date"
+              leftIcon={<Calendar size={20} className="text-gray-400" />}
+              value={startDate ? startDate.toISOString().split('T')[0] : ''}
+              onChange={(e) => setStartDate(e.target.value ? new Date(e.target.value) : undefined)}
+              required
+            />
+          </div>
 
-          <form.Field
-            name="endDate"
-            validators={{
-              onChange: bookingSchema.shape.endDate,
-            }}
-          >
-            {(field) => (
-              <FormField
-                field={field}
-                label="Check-out Date"
-                type="date"
-                placeholder="Select check-out date"
-                leftIcon={<Calendar size={20} className="text-gray-400" />}
-              />
-            )}
-          </form.Field>
+          <div>
+            <Input
+              label="Check-out Date"
+              type="date"
+              placeholder="Select check-out date"
+              leftIcon={<Calendar size={20} className="text-gray-400" />}
+              value={endDate ? endDate.toISOString().split('T')[0] : ''}
+              onChange={(e) => setEndDate(e.target.value ? new Date(e.target.value) : undefined)}
+              required
+            />
+          </div>
 
-          <form.Field
-            name="guests"
-            validators={{
-              onChange: bookingSchema.shape.guests,
-            }}
-          >
-            {(field) => (
-              <FormField
-                field={field}
-                label="Number of Guests"
-                type="number"
-                placeholder="Enter number of guests"
-                leftIcon={<Users size={20} className="text-gray-400" />}
-              />
-            )}
-          </form.Field>
+          <div>
+            <Input
+              label="Number of Guests"
+              type="number"
+              placeholder="Enter number of guests"
+              leftIcon={<Users size={20} className="text-gray-400" />}
+              value={guests}
+              onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
+              min="1"
+              max="20"
+              required
+            />
+          </div>
 
-          <form.Field
-            name="specialRequests"
-            validators={{
-              onChange: bookingSchema.shape.specialRequests,
-            }}
-          >
-            {(field) => (
-              <FormField
-                field={field}
-                label="Special Requests (Optional)"
-                type="textarea"
-                placeholder="Any special requests or notes for your stay"
-                leftIcon={<MessageSquare size={20} className="text-gray-400" />}
-              />
-            )}
-          </form.Field>
+          <div>
+            <Input
+              label="Special Requests (Optional)"
+              type="textarea"
+              placeholder="Any special requests or notes for your stay"
+              leftIcon={<MessageSquare size={20} className="text-gray-400" />}
+              value={specialRequests}
+              onChange={(e) => setSpecialRequests(e.target.value)}
+            />
+          </div>
 
           {/* Price Summary */}
           {startDate && endDate && (
@@ -160,10 +138,9 @@ export const BookingForm: React.FC<BookingFormProps> = ({
           <Button
             type="submit"
             className="w-full"
-            isLoading={isLoading}
-            disabled={!form.state.isValid || isLoading}
+            disabled={!isFormValid || isLoading}
           >
-            Complete Booking
+            {isLoading ? 'Processing...' : 'Complete Booking'}
           </Button>
         </form>
       </CardContent>

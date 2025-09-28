@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
+import Image from 'next/image';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { BookingForm } from '@/components/forms/BookingForm';
@@ -21,7 +22,6 @@ import {
   Calendar,
   Users
 } from 'lucide-react';
-import Image from 'next/image';
 
 interface Listing {
   id: string;
@@ -190,9 +190,11 @@ export default function ListingDetailPage() {
               <h2 className="text-2xl font-semibold font-playfair mb-4">Meet your host</h2>
               <Card className="p-6">
                 <div className="flex items-center gap-4">
-                  <img
+                  <Image
                     src={listing.host.avatar}
                     alt={listing.host.name}
+                    width={64}
+                    height={64}
                     className="w-16 h-16 rounded-full object-cover"
                   />
                   <div>
@@ -252,7 +254,7 @@ export default function ListingDetailPage() {
               </Button>
 
               <div className="text-center text-sm text-gray-600">
-                You won't be charged yet
+                You won&apos;t be charged yet
               </div>
             </Card>
           </div>

@@ -41,7 +41,7 @@ export const Header: React.FC = () => {
                 placeholder="Search experiences"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 pl-10 pr-4 border border-gray-300 rounded-full focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all duration-200"
+                className="w-full px-4 py-3 pl-10 pr-4 bg-white border border-gray-300 rounded-full focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all duration-200"
               />
             </div>
           </div>
@@ -96,7 +96,7 @@ export const Header: React.FC = () => {
               placeholder="Search experiences"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 pl-10 pr-4 border border-gray-300 rounded-full focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all duration-200"
+              className="w-full px-4 py-3 pl-10 pr-4 bg-white border border-gray-300 rounded-full focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all duration-200"
             />
           </div>
         </div>

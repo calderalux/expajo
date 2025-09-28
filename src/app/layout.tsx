@@ -45,8 +45,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${playfair.variable} ${lato.variable}`}>
-      <body className="min-h-screen bg-background font-lato antialiased">
+    <html lang="en" className={`${playfair.variable} ${lato.variable}`} suppressHydrationWarning>
+      <body className="min-h-screen bg-background font-lato antialiased" suppressHydrationWarning>
         <MantineProviderWrapper>
           <SupabaseProvider>
             {children}

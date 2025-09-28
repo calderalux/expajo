@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { Star, Quote } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 
@@ -71,7 +72,7 @@ export const ReviewsSection: React.FC = () => {
             What Our Guests Say
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Don't just take our word for it - hear from our satisfied guests
+            Don&apos;t just take our word for it - hear from our satisfied guests
           </p>
         </motion.div>
 
@@ -86,9 +87,11 @@ export const ReviewsSection: React.FC = () => {
             >
               <Card className="p-6 h-full">
                 <div className="flex items-center mb-4">
-                  <img
+                  <Image
                     src={review.avatar}
                     alt={review.name}
+                    width={48}
+                    height={48}
                     className="w-12 h-12 rounded-full object-cover mr-4"
                   />
                   <div>
@@ -114,7 +117,7 @@ export const ReviewsSection: React.FC = () => {
                 <div className="relative">
                   <Quote size={24} className="text-primary/20 absolute -top-2 -left-2" />
                   <p className="text-gray-700 leading-relaxed pl-6">
-                    "{review.comment}"
+                    &ldquo;{review.comment}&rdquo;
                   </p>
                 </div>
               </Card>

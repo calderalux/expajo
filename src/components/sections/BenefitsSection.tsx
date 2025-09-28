@@ -47,7 +47,7 @@ export const BenefitsSection: React.FC = () => {
             Why Choose Expajo?
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            We're committed to making your short-term rental experience exceptional
+            We&apos;re committed to making your short-term rental experience exceptional
           </p>
         </motion.div>
 
