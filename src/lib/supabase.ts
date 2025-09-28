@@ -326,6 +326,59 @@ export interface Database {
                   created_at?: string | null;
                 };
               };
+              destinations: {
+                Row: {
+                  id: string;
+                  title: string;
+                  description: string;
+                  location: string;
+                  country: string;
+                  image_urls: string[];
+                  highlights: string[];
+                  best_time_to_visit: string;
+                  climate: string;
+                  currency: string;
+                  language: string;
+                  is_featured: boolean;
+                  is_active: boolean;
+                  created_at: string;
+                  updated_at: string;
+                };
+                Insert: {
+                  id?: string;
+                  title: string;
+                  description: string;
+                  location: string;
+                  country: string;
+                  image_urls?: string[];
+                  highlights?: string[];
+                  best_time_to_visit: string;
+                  climate: string;
+                  currency: string;
+                  language: string;
+                  is_featured?: boolean;
+                  is_active?: boolean;
+                  created_at?: string;
+                  updated_at?: string;
+                };
+                Update: {
+                  id?: string;
+                  title?: string;
+                  description?: string;
+                  location?: string;
+                  country?: string;
+                  image_urls?: string[];
+                  highlights?: string[];
+                  best_time_to_visit?: string;
+                  climate?: string;
+                  currency?: string;
+                  language?: string;
+                  is_featured?: boolean;
+                  is_active?: boolean;
+                  created_at?: string;
+                  updated_at?: string;
+                };
+              };
               faqs: {
                 Row: {
                   id: string;
