@@ -35,6 +35,8 @@ module.exports = {
       },
       borderRadius: {
         'button': '40px',
+        'card': '12px',
+        'input': '8px',
       },
       backgroundImage: {
         'gradient-primary': 'linear-gradient(135deg, #4362FF 0%, #7530FF 100%)',

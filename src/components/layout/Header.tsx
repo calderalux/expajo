@@ -49,7 +49,7 @@ export const Header: React.FC = () => {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link 
-              href="/search" 
+              href="/experiences" 
               className="text-gray-700 hover:text-primary transition-colors duration-200 font-medium"
             >
               Experiences
@@ -76,7 +76,7 @@ export const Header: React.FC = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={toggleMobileMenu}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+            className="md:hidden p-2 rounded-card hover:bg-gray-100 transition-colors duration-200"
             aria-label="Toggle mobile menu"
           >
             {isMobileMenuOpen ? (
@@ -106,7 +106,7 @@ export const Header: React.FC = () => {
           <div className="md:hidden py-4 border-t border-gray-200">
             <nav className="flex flex-col space-y-4">
               <Link 
-                href="/search" 
+                href="/experiences" 
                 className="text-gray-700 hover:text-primary transition-colors duration-200 font-medium py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >

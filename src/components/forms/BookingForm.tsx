@@ -119,7 +119,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
 
           {/* Price Summary */}
           {startDate && endDate && (
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+            <div className="bg-gray-50 rounded-card p-4 space-y-2">
               <div className="flex justify-between">
                 <span>Price per night:</span>
                 <span>${pricePerNight}</span>

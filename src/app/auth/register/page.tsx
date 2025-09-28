@@ -52,7 +52,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {error && (
-          <div className={`px-4 py-3 rounded-lg ${
+          <div className={`px-4 py-3 rounded-card ${
             error.includes('check your email') 
               ? 'bg-blue-50 border border-blue-200 text-blue-700'
               : 'bg-red-50 border border-red-200 text-red-700'
