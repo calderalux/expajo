@@ -19,11 +19,10 @@ export const Footer: React.FC = () => {
   const locations = [
     'Lagos',
     'Abuja',
-    'Calabar',
     'Port-Harcourt',
-    'Kano',
     'Ibadan',
-    'Jos',
+    'Kano',
+    'Abeokuta',
   ];
 
   const handleWhatsAppClick = () => {
@@ -39,9 +38,9 @@ export const Footer: React.FC = () => {
   return (
     <footer className="bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-12">
-        <div className="flex flex-col md:flex-row gap-8 md:gap-0 justify-center md:justify-start items-center md:items-start">
+        <div className="flex flex-col md:flex-row gap-8 md:gap-0 md:justify-between">
           {/* Company Information - Left Column */}
-          <div className="flex-1 max-w-md mx-auto lg:mx-0 md:w-1/3">
+          <div className="w-full md:w-1/3 justify-self-start flex flex-col items-start">
             <div className="mb-6">
               <h2 className="text-2xl font-bold font-playfair text-white mb-4">
                 Expajo
@@ -88,7 +87,7 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Our Services - Middle Column */}
-          <div className="text-left w-full max-w-md mx-auto lg:mx-0 flex-1 md:w-1/3">
+          <div className="w-full text-left md:w-1/3 justify-self-center flex flex-col md:items-center">
             <h3 className="text-lg font-semibold text-white mb-6">
               Our Services
             </h3>
@@ -107,7 +106,7 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Locations - Right Column */}
-          <div className="text-left w-full max-w-md mx-auto lg:mx-0 flex-1 md:w-1/3">
+          <div className="w-full text-left md:w-1/3 justify-self-end flex flex-col md:items-center">
             <h3 className="text-lg font-semibold text-white mb-6">
               Locations
             </h3>

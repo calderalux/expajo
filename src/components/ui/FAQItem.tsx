@@ -24,10 +24,10 @@ export const FAQItem: React.FC<FAQItemProps> = ({
   className = '',
 }) => {
   return (
-    <div className={cn('bg-white border border-gray-200 rounded-card overflow-hidden', className)}>
+    <div className={cn('bg-white rounded-card overflow-hidden', className)}>
       <button
         onClick={onToggle}
-        className="w-full text-left p-6 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
+        className="w-full text-left p-6 focus:outline-none"
         aria-expanded={isOpen}
         aria-controls={`faq-answer-${faq.id}`}
       >
@@ -52,7 +52,7 @@ export const FAQItem: React.FC<FAQItemProps> = ({
           isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
         )}
       >
-        <div className="px-6 pb-6 border-t border-gray-200">
+        <div className="px-6 pb-6">
           <p className="text-gray-700 leading-relaxed pt-4">
             {faq.answer}
           </p>
