@@ -24,7 +24,7 @@ export const FAQItem: React.FC<FAQItemProps> = ({
   className = '',
 }) => {
   return (
-    <div className={cn('bg-white border border-gray-200 rounded-lg overflow-hidden', className)}>
+    <div className={cn('bg-white border border-gray-200 rounded-card overflow-hidden', className)}>
       <button
         onClick={onToggle}
         className="w-full text-left p-6 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"

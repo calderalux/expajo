@@ -27,7 +27,7 @@ export const Select: React.FC<SelectProps> = ({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2.5 pr-8 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
+        className="w-full px-3 py-2.5 pr-8 bg-white border border-gray-300 rounded-input text-sm text-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
       >
         {placeholder && (
           <option value="" disabled>

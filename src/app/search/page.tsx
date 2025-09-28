@@ -169,7 +169,7 @@ function SearchContent() {
           </h1>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">Sort by:</span>
-            <select className="border border-gray-300 rounded-lg px-3 py-2">
+            <select className="border border-gray-300 rounded-input px-3 py-2">
               <option>Price: Low to High</option>
               <option>Price: High to Low</option>
               <option>Rating</option>

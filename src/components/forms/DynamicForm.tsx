@@ -130,7 +130,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
               value={value}
               onChange={(e) => handleInputChange(field.name, e.target.value)}
               className={cn(
-                'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all duration-200 appearance-none cursor-pointer',
+                'w-full px-4 py-3 border rounded-input focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all duration-200 appearance-none cursor-pointer',
                 field.icon ? 'pl-10' : 'pl-4',
                 hasError ? 'border-red-500' : 'border-gray-300'
               )}
@@ -175,7 +175,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
               onChange={(e) => handleInputChange(field.name, e.target.value)}
               placeholder={field.placeholder}
               className={cn(
-                'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all duration-200 resize-none',
+                'w-full px-4 py-3 border rounded-input focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all duration-200 resize-none',
                 field.icon ? 'pl-10' : 'pl-4',
                 hasError ? 'border-red-500' : 'border-gray-300'
               )}
@@ -189,7 +189,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
               onChange={(e) => handleInputChange(field.name, e.target.value)}
               placeholder={field.placeholder}
               className={cn(
-                'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all duration-200',
+                'w-full px-4 py-3 border rounded-input focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all duration-200',
                 field.icon ? 'pl-10' : 'pl-4',
                 hasError ? 'border-red-500' : 'border-gray-300'
               )}

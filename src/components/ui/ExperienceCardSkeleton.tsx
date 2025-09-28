@@ -50,8 +50,8 @@ export const ExperienceCardSkeleton: React.FC<ExperienceCardSkeletonProps> = ({
 
         {/* Action Buttons Skeleton */}
         <div className="flex gap-3 pt-2">
-          <div className="h-10 flex-1 bg-gray-200 rounded-lg" />
-          <div className="h-10 flex-1 bg-gray-200 rounded-lg" />
+          <div className="h-10 flex-1 bg-gray-200 rounded-card" />
+          <div className="h-10 flex-1 bg-gray-200 rounded-card" />
         </div>
       </div>
     </div>

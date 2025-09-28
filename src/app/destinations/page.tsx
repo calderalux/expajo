@@ -17,7 +17,7 @@ export default function DestinationsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Placeholder destination cards */}
             {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
+              <div key={index} className="bg-white rounded-card shadow-md overflow-hidden">
                 <div className="h-48 bg-gradient-to-br from-primary/20 to-secondary/20"></div>
                 <div className="p-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">

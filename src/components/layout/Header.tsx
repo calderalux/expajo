@@ -76,7 +76,7 @@ export const Header: React.FC = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={toggleMobileMenu}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+            className="md:hidden p-2 rounded-card hover:bg-gray-100 transition-colors duration-200"
             aria-label="Toggle mobile menu"
           >
             {isMobileMenuOpen ? (
