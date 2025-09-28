@@ -146,29 +146,36 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
               ))}
             </select>
           ) : field.type === 'date' ? (
-            <DatePickerInput
-              value={value ? new Date(value) : null}
-              onChange={(date) => handleInputChange(field.name, date ? date.toISOString().split('T')[0] : '')}
-              placeholder={field.placeholder || 'dd/mm/yy'}
-              className={cn(
-                'w-full',
-                hasError ? 'border-red-500' : 'border-gray-300'
+            <div className="relative">
+              {field.icon && (
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10">
+                  {field.icon}
+                </div>
               )}
-              styles={{
-                input: {
-                  paddingLeft: field.icon ? '2.5rem' : '1rem',
-                  paddingRight: '2.5rem',
-                  height: '3rem',
-                  border: hasError ? '1px solid #ef4444' : '1px solid #d1d5db',
-                  borderRadius: '0.5rem',
-                  fontSize: '1rem',
-                  '&:focus': {
-                    borderColor: '#4362FF',
-                    boxShadow: '0 0 0 2px rgba(67, 98, 255, 0.2)',
+              <DatePickerInput
+                value={value ? new Date(value) : null}
+                onChange={(date) => handleInputChange(field.name, date ? date.toISOString().split('T')[0] : '')}
+                placeholder={field.placeholder || 'dd/mm/yy'}
+                className={cn(
+                  'w-full',
+                  hasError ? 'border-red-500' : 'border-gray-300'
+                )}
+                styles={{
+                  input: {
+                    paddingLeft: field.icon ? '2.5rem' : '1rem',
+                    paddingRight: '2.5rem',
+                    height: '3rem',
+                    border: hasError ? '1px solid #ef4444' : '1px solid #d1d5db',
+                    borderRadius: '0.5rem',
+                    fontSize: '1rem',
+                    '&:focus': {
+                      borderColor: '#4362FF',
+                      boxShadow: '0 0 0 2px rgba(67, 98, 255, 0.2)',
+                    },
                   },
-                },
-              }}
-            />
+                }}
+              />
+            </div>
           ) : field.type === 'textarea' ? (
             <textarea
               value={value}
