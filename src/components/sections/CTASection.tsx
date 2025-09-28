@@ -2,68 +2,59 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/Button';
-import { ArrowRight, Download } from 'lucide-react';
+import { CTAButton } from '@/components/ui/CTAButton';
 
-export const CTASection: React.FC = () => {
+interface CTASectionProps {
+  title?: string;
+  description?: string;
+  buttonText?: string;
+  buttonHref?: string;
+  onButtonClick?: () => void;
+  className?: string;
+}
+
+export const CTASection: React.FC<CTASectionProps> = ({
+  title = "Ready to Create Your Own Story?",
+  description = "Join hundreds of satisfied travelers who've discovered the magic of Nigeria with Expajo.",
+  buttonText = "Start Planning Your Journey",
+  buttonHref,
+  onButtonClick,
+  className = '',
+}) => {
   return (
-    <section className="py-20 bg-gradient-to-br from-primary to-secondary">
+    <section className={`py-16 lg:py-24 bg-white ${className}`}>
       <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="text-center text-white"
-        >
-          <h2 className="text-4xl md:text-5xl font-bold font-playfair mb-6">
-            Ready to Find Your Perfect Stay?
-          </h2>
-          <p className="text-xl md:text-2xl mb-12 opacity-90 max-w-3xl mx-auto">
-            Join thousands of travelers who trust Expajo for their accommodation needs. 
-            Start your journey today and discover amazing places to stay.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
-            <Button
-              size="lg"
-              variant="secondary"
-              className="bg-white text-primary hover:bg-gray-100"
-              rightIcon={<ArrowRight size={20} />}
-            >
-              Start Searching
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-white text-white hover:bg-white hover:text-primary"
-              rightIcon={<Download size={20} />}
-            >
-              Download App
-            </Button>
-          </div>
-
+        <div className="max-w-4xl mx-auto text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
+            className="space-y-8"
           >
-            <div className="text-center">
-              <div className="text-4xl font-bold mb-2">10K+</div>
-              <div className="text-lg opacity-90">Properties Available</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold mb-2">50K+</div>
-              <div className="text-lg opacity-90">Happy Guests</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold mb-2">100+</div>
-              <div className="text-lg opacity-90">Cities Worldwide</div>
+            {/* Title */}
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold font-playfair text-gray-900 leading-tight">
+              {title}
+            </h2>
+
+            {/* Description */}
+            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              {description}
+            </p>
+
+            {/* CTA Button */}
+            <div className="pt-4">
+              <CTAButton
+                onClick={onButtonClick}
+                href={buttonHref}
+                size="lg"
+                className="inline-block"
+              >
+                {buttonText}
+              </CTAButton>
             </div>
           </motion.div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
