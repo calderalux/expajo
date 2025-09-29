@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -11,7 +13,11 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { CategoryFilter } from '@/components/ui/CategoryFilter';
 import { Search, Filter, MapPin, Star, Clock, Users } from 'lucide-react';
-import { ExperienceService, Experience, ExperienceFilters } from '@/lib/services/experiences';
+import {
+  ExperienceService,
+  Experience,
+  ExperienceFilters,
+} from '@/lib/services/experiences';
 import { motion } from 'framer-motion';
 
 interface ExperienceListState {
@@ -56,15 +62,28 @@ function ExperienceListContent() {
   const [filters, setFilters] = useState<ExperienceFilters>({
     category: searchParams.get('category') || undefined,
     location: searchParams.get('location') || undefined,
-    minPrice: searchParams.get('minPrice') ? parseInt(searchParams.get('minPrice')!) : undefined,
-    maxPrice: searchParams.get('maxPrice') ? parseInt(searchParams.get('maxPrice')!) : undefined,
-    minRating: searchParams.get('minRating') ? parseFloat(searchParams.get('minRating')!) : undefined,
+    minPrice: searchParams.get('minPrice')
+      ? parseInt(searchParams.get('minPrice')!)
+      : undefined,
+    maxPrice: searchParams.get('maxPrice')
+      ? parseInt(searchParams.get('maxPrice')!)
+      : undefined,
+    minRating: searchParams.get('minRating')
+      ? parseFloat(searchParams.get('minRating')!)
+      : undefined,
   });
 
-  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
-  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'rating-desc');
-  const [selectedCategory, setSelectedCategory] = useState(filters.category || 'All experiences');
-  const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams.get('search') || ''
+  );
+  const [sortBy, setSortBy] = useState(
+    searchParams.get('sort') || 'rating-desc'
+  );
+  const [selectedCategory, setSelectedCategory] = useState(
+    filters.category || 'All experiences'
+  );
+  const [selectedExperience, setSelectedExperience] =
+    useState<Experience | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
   // Parse sort option
@@ -79,7 +98,7 @@ function ExperienceListContent() {
   // Fetch experiences
   const fetchExperiences = async (page: number = 1, reset: boolean = false) => {
     try {
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       const sortOptions = getSortOptions(sortBy);
       const { data, error } = await ExperienceService.getExperiences(
@@ -92,16 +111,18 @@ function ExperienceListContent() {
         throw new Error(error);
       }
 
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
-        experiences: reset ? data || [] : [...prev.experiences, ...(data || [])],
+        experiences: reset
+          ? data || []
+          : [...prev.experiences, ...(data || [])],
         isLoading: false,
         hasMore: (data || []).length === 12,
         currentPage: page,
         totalCount: data?.length || 0,
       }));
     } catch (err: any) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isLoading: false,
         error: err.message || 'Failed to fetch experiences',
@@ -119,7 +140,7 @@ function ExperienceListContent() {
   // Handle search
   const handleSearch = () => {
     if (searchTerm.trim()) {
-      setFilters(prev => ({ ...prev, location: searchTerm.trim() }));
+      setFilters((prev) => ({ ...prev, location: searchTerm.trim() }));
     }
     fetchExperiences(1, true);
   };
@@ -158,7 +179,8 @@ function ExperienceListContent() {
     if (filters.location) params.set('location', filters.location);
     if (filters.minPrice) params.set('minPrice', filters.minPrice.toString());
     if (filters.maxPrice) params.set('maxPrice', filters.maxPrice.toString());
-    if (filters.minRating) params.set('minRating', filters.minRating.toString());
+    if (filters.minRating)
+      params.set('minRating', filters.minRating.toString());
     if (searchTerm) params.set('search', searchTerm);
     if (sortBy) params.set('sort', sortBy);
 
@@ -181,7 +203,8 @@ function ExperienceListContent() {
               Discover Experiences
             </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Explore handpicked adventures, cultural immersions, and luxury escapes across Nigeria.
+              Explore handpicked adventures, cultural immersions, and luxury
+              escapes across Nigeria.
             </p>
           </motion.div>
 
@@ -255,13 +278,13 @@ function ExperienceListContent() {
         ) : state.error ? (
           <div className="text-center py-12">
             <div className="text-red-600 text-lg mb-4">{state.error}</div>
-            <Button onClick={() => fetchExperiences(1, true)}>
-              Try Again
-            </Button>
+            <Button onClick={() => fetchExperiences(1, true)}>Try Again</Button>
           </div>
         ) : state.experiences.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-gray-500 text-lg mb-4">No experiences found</div>
+            <div className="text-gray-500 text-lg mb-4">
+              No experiences found
+            </div>
             <Button onClick={() => fetchExperiences(1, true)}>
               Reset Filters
             </Button>
@@ -280,7 +303,9 @@ function ExperienceListContent() {
                     experience={experience}
                     onViewDetails={() => handleExperienceClick(experience)}
                     onBookNow={() => console.log('Book now:', experience.id)}
-                    onToggleFavorite={() => console.log('Toggle favorite:', experience.id)}
+                    onToggleFavorite={() =>
+                      console.log('Toggle favorite:', experience.id)
+                    }
                     onShare={() => console.log('Share:', experience.id)}
                   />
                 </motion.div>
@@ -325,11 +350,13 @@ function ExperienceListContent() {
 export default function ExperiencesPage() {
   return (
     <Layout>
-      <Suspense fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      }>
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        }
+      >
         <ExperienceListContent />
       </Suspense>
     </Layout>

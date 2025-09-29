@@ -26,7 +26,7 @@ export const TrustedPartnerSection: React.FC = () => {
               Your trusted partner for luxury Nigerian experiences
             </h2>
             <p className="text-lg md:text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-              We don't just plan trips—we create transformative experiences that showcase the best of Nigeria with uncompromising safety and luxury.
+              We don&apos;t just plan trips—we create transformative experiences that showcase the best of Nigeria with uncompromising safety and luxury.
             </p>
           </motion.div>
 

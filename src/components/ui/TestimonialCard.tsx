@@ -63,7 +63,7 @@ export const TestimonialCard: React.FC<TestimonialCardProps> = ({
 
       {/* Quote */}
       <blockquote className="text-gray-700 text-base leading-relaxed mb-6 flex-grow">
-        "{testimonial.comment}"
+        {testimonial.comment}
       </blockquote>
 
       {/* User Profile */}

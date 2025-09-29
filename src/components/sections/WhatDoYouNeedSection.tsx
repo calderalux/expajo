@@ -38,7 +38,7 @@ export const WhatDoYouNeedSection: React.FC = () => {
               What do you need for your trip?
             </h2>
             <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
-              Select the services you're interested in to see personalized recommendations
+              Select the services you&apos;re interested in to see personalized recommendations
             </p>
           </motion.div>
 
