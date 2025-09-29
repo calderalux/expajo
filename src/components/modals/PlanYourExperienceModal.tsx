@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { zodValidator } from '@tanstack/zod-form-adapter';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Checkbox, TextInput, Select } from '@mantine/core';
@@ -124,11 +124,11 @@ export const PlanYourExperienceModal: React.FC<
 
   const renderStep1 = () => (
     <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-xl font-bold text-gray-900 mb-2">
+      <div>
+        <h3 className="text-lg font-bold text-gray-900 mb-2 font-lato">
           What services do you need?
         </h3>
-        <p className="text-gray-600 text-sm">
+        <p className="text-gray-600 text-sm font-lato">
           Select all services you&apos;re interested in for your Nigerian
           experience (choose at least one)
         </p>
@@ -165,6 +165,7 @@ export const PlanYourExperienceModal: React.FC<
                       fontSize: '1rem',
                       color: '#374151',
                       fontWeight: 500,
+                      fontFamily: 'Lato, sans-serif',
                     },
                   }}
                 />
@@ -528,15 +529,37 @@ export const PlanYourExperienceModal: React.FC<
   );
 
   const renderProgressIndicator = () => (
-    <div className="flex items-center space-x-2">
-      <span className="text-sm text-gray-500">Step {currentStep}/3</span>
-      <div className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center">
-        <div
-          className={cn(
-            'w-6 h-6 rounded-full transition-all duration-300',
-            currentStep === 3 ? 'bg-purple-500' : 'bg-gray-300'
-          )}
-        />
+    <div className="flex items-center space-x-3">
+      <span className="text-sm text-gray-500 font-medium">
+        Step {currentStep}/3
+      </span>
+      <div className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center relative">
+        <svg
+          className="w-8 h-8 absolute inset-0 transform -rotate-90"
+          viewBox="0 0 32 32"
+        >
+          <circle
+            cx="16"
+            cy="16"
+            r="14"
+            stroke="currentColor"
+            strokeWidth="2"
+            fill="none"
+            className="text-gray-300"
+          />
+          <circle
+            cx="16"
+            cy="16"
+            r="14"
+            stroke="currentColor"
+            strokeWidth="2"
+            fill="none"
+            strokeDasharray={`${2 * Math.PI * 14}`}
+            strokeDashoffset={`${2 * Math.PI * 14 * (1 - currentStep / 3)}`}
+            className="text-purple-500 transition-all duration-500"
+            strokeLinecap="round"
+          />
+        </svg>
       </div>
     </div>
   );
@@ -554,12 +577,6 @@ export const PlanYourExperienceModal: React.FC<
       <div className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
           <h2 className="text-2xl font-bold text-gray-900 font-playfair">
             Plan Your Nigerian Experience
           </h2>
@@ -582,12 +599,12 @@ export const PlanYourExperienceModal: React.FC<
         </AnimatePresence>
 
         {/* Action Buttons */}
-        <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+        <div className="flex justify-between mt-8 pt-6">
           <Button
             onClick={handlePrevious}
             variant="outline"
             disabled={currentStep === 1}
-            className="px-8"
+            className="px-6 py-2 text-gray-600 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </Button>
@@ -603,7 +620,7 @@ export const PlanYourExperienceModal: React.FC<
               }
             }}
             variant="primary"
-            className="px-8"
+            className="px-8 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-medium rounded-full"
             disabled={
               (currentStep === 1 && step1Form.state.isSubmitting) ||
               (currentStep === 2 && step2Form.state.isSubmitting) ||
