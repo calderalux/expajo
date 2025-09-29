@@ -12,6 +12,8 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
+    "@heroui/react": "^2.8.4",
+    "@heroui/theme": "^2.4.22",
     "@hookform/resolvers": "^3.3.2",
     "@mantine/core": "^7.17.8",
     "@mantine/dates": "^7.17.8",

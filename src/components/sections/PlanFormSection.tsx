@@ -2,46 +2,22 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { MapPin, Calendar, Users } from 'lucide-react';
-import { DynamicForm, FormField, FormAction } from '@/components/forms/DynamicForm';
-import { PlanRequestService, PlanRequestFormData } from '@/lib/services/planRequests';
-
-// Nigerian states and cities data
-const nigerianLocations = [
-  { value: 'abuja', label: 'Abuja' },
-  { value: 'lagos', label: 'Lagos' },
-  { value: 'calabar', label: 'Calabar' },
-  { value: 'kano', label: 'Kano' },
-  { value: 'ibadan', label: 'Ibadan' },
-  { value: 'port-harcourt', label: 'Port Harcourt' },
-  { value: 'benin', label: 'Benin' },
-  { value: 'kaduna', label: 'Kaduna' },
-  { value: 'maiduguri', label: 'Maiduguri' },
-  { value: 'zaria', label: 'Zaria' },
-  { value: 'aba', label: 'Aba' },
-  { value: 'jos', label: 'Jos' },
-  { value: 'ilorin', label: 'Ilorin' },
-  { value: 'oyo', label: 'Oyo' },
-  { value: 'enugu', label: 'Enugu' },
-  { value: 'abeokuta', label: 'Abeokuta' },
-  { value: 'sokoto', label: 'Sokoto' },
-  { value: 'onitsha', label: 'Onitsha' },
-  { value: 'warri', label: 'Warri' },
-  { value: 'akure', label: 'Akure' },
-];
-
-const guestOptions = [
-  { value: '1', label: '1 Adult' },
-  { value: '2', label: '2 Adults' },
-  { value: '3', label: '3 Adults' },
-  { value: '4', label: '4 Adults' },
-  { value: '5', label: '5 Adults' },
-  { value: '6', label: '6 Adults' },
-  { value: '7', label: '7 Adults' },
-  { value: '8', label: '8 Adults' },
-  { value: '9', label: '9 Adults' },
-  { value: '10', label: '10 Adults' },
-];
+import {
+  TanStackDynamicForm,
+  FormFieldConfig,
+  FormAction,
+} from '@/components/forms/TanStackDynamicForm';
+import {
+  PlanRequestService,
+  PlanRequestFormData,
+} from '@/lib/services/planRequests';
+import {
+  planRequestSchema,
+  planRequestFields,
+  PlanRequestFormData as PlanRequestData,
+} from '@/lib/validations/planRequest';
 
 const stats = [
   {
@@ -64,35 +40,20 @@ const stats = [
 
 export const PlanFormSection: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-  const formFields: FormField[] = [
+  // Core form fields using TanStack Form + Zod
+  const formFields: FormFieldConfig[] = [
     {
-      id: 'location',
-      name: 'location',
-      type: 'select',
-      label: 'State/City',
-      placeholder: 'Abuja, Lagos, Calabar...',
-      required: true,
-      options: nigerianLocations,
+      ...planRequestFields[0], // location
       icon: <MapPin size={20} className="text-gray-400" />,
     },
     {
-      id: 'date',
-      name: 'date',
-      type: 'date',
-      label: 'Date',
-      placeholder: 'dd/mm/yy',
-      required: true,
+      ...planRequestFields[1], // travel_date
       icon: <Calendar size={20} className="text-gray-400" />,
     },
     {
-      id: 'guests',
-      name: 'guests',
-      type: 'select',
-      label: 'Guests',
-      placeholder: '2 Adults',
-      required: true,
-      options: guestOptions,
+      ...planRequestFields[2], // guests
       icon: <Users size={20} className="text-gray-400" />,
     },
   ];
@@ -102,51 +63,41 @@ export const PlanFormSection: React.FC = () => {
       id: 'start-planning',
       label: 'Start Planning',
       type: 'primary',
-      onClick: () => console.log('Start planning clicked'),
       loading: isLoading,
     },
     {
       id: 'browse-experiences',
-      label: 'Browse experiences',
+      label: 'Browse Experiences',
       type: 'outline',
-      onClick: () => console.log('Browse experiences clicked'),
+      onClick: () => {
+        // Navigate to experiences page
+        router.push('/experiences');
+      },
     },
   ];
 
-  const handleFormSubmit = async (data: Record<string, any>) => {
+  const handleFormSubmit = async (data: PlanRequestData) => {
     setIsLoading(true);
-    
-    try {
-      // Prepare form data
-      const formData: PlanRequestFormData = {
-        location: data.location,
-        travel_date: data.date,
-        guests: parseInt(data.guests),
-        special_requests: data.special_requests || '',
-        budget_range: data.budget_range || '',
-        interests: data.interests || [],
-        contact_email: data.contact_email || '',
-        contact_phone: data.contact_phone || '',
-      };
 
-      // Submit to database
-      const { data: result, error } = await PlanRequestService.createPlanRequest(formData);
-      
+    try {
+      // Submit to database using TanStack Form + Zod validated data
+      const { data: result, error } =
+        await PlanRequestService.createPlanRequest(data);
+
       if (error) {
         console.error('Error submitting plan request:', error);
-        // TODO: Show error message to user
+        // TODO: Show error message to user using toast
         return;
       }
 
       console.log('Plan request submitted successfully:', result);
-      
-      // TODO: Show success message
+
+      // TODO: Show success message using toast
       // TODO: Send email notification
       // TODO: Redirect to planning page or show confirmation
-      
     } catch (error) {
       console.error('Error submitting plan request:', error);
-      // TODO: Show error message to user
+      // TODO: Show error message to user using toast
     } finally {
       setIsLoading(false);
     }
@@ -155,11 +106,12 @@ export const PlanFormSection: React.FC = () => {
   return (
     <section className="py-16 lg:py-24 bg-white">
       <div className="container mx-auto px-4">
-        <DynamicForm
+        <TanStackDynamicForm
           title="Plan Your Perfect Nigerian Adventure"
           subtitle="Tell us what you're looking for and we'll create a personalized itinerary just for you."
           fields={formFields}
           actions={formActions}
+          schema={planRequestSchema}
           onSubmit={handleFormSubmit}
           isLoading={isLoading}
         />
