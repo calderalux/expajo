@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { zodValidator } from '@tanstack/zod-form-adapter';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,11 +29,16 @@ interface PlanYourExperienceModalProps {
     step2: Step2Data;
     step3: Step3Data;
   }) => void;
+  initialData?: {
+    location?: string;
+    travel_date?: string;
+    guests?: string;
+  };
 }
 
 export const PlanYourExperienceModal: React.FC<
   PlanYourExperienceModalProps
-> = ({ isOpen, onClose, onSuccess }) => {
+> = ({ isOpen, onClose, onSuccess, initialData }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
   const [formData, setFormData] = useState<{
@@ -41,6 +46,15 @@ export const PlanYourExperienceModal: React.FC<
     step2?: Step2Data;
     step3?: Step3Data;
   }>({});
+
+  // Reset form data when modal opens with new initial data
+  useEffect(() => {
+    if (isOpen && initialData) {
+      setFormData({});
+      setCurrentStep(1);
+      setShowSuccess(false);
+    }
+  }, [isOpen, initialData]);
 
   // Step 1 Form
   const step1Form = useForm({
@@ -56,13 +70,23 @@ export const PlanYourExperienceModal: React.FC<
     },
   });
 
+  // Helper function to capitalize first letter
+  const capitalizeFirstLetter = (str: string) => {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
+
   // Step 2 Form
   const step2Form = useForm({
     defaultValues: {
-      destination: formData.step2?.destination || '',
-      arrivalDate: formData.step2?.arrivalDate || '',
+      destination:
+        formData.step2?.destination ||
+        (initialData?.location
+          ? capitalizeFirstLetter(initialData.location)
+          : ''),
+      arrivalDate:
+        formData.step2?.arrivalDate || initialData?.travel_date || '',
       departureDate: formData.step2?.departureDate || '',
-      adults: formData.step2?.adults?.toString() || '1',
+      adults: formData.step2?.adults?.toString() || initialData?.guests || '1',
       children: formData.step2?.children?.toString() || '0',
     },
     validators: {

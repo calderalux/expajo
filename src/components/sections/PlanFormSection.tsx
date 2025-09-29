@@ -42,6 +42,7 @@ const stats = [
 export const PlanFormSection: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState<PlanRequestData | null>(null);
   const router = useRouter();
 
   // Core form fields using TanStack Form + Zod
@@ -82,8 +83,9 @@ export const PlanFormSection: React.FC = () => {
   ];
 
   const handleFormSubmit = async (data: PlanRequestData) => {
-    // If form is valid, open the three-step modal instead of submitting to API
+    // Store the form data and open the three-step modal
     console.log('Form is valid, opening three-step modal with data:', data);
+    setFormData(data);
     setIsModalOpen(true);
   };
 
@@ -179,6 +181,15 @@ export const PlanFormSection: React.FC = () => {
         isOpen={isModalOpen}
         onClose={handleModalClose}
         onSuccess={handleModalSuccess}
+        initialData={
+          formData
+            ? {
+                location: formData.location,
+                travel_date: formData.travel_date,
+                guests: formData.guests.toString(),
+              }
+            : undefined
+        }
       />
     </section>
   );
