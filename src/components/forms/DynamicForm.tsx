@@ -6,7 +6,14 @@ import { cn } from '@/utils/cn';
 export interface FormField {
   id: string;
   name: string;
-  type: 'text' | 'email' | 'password' | 'select' | 'date' | 'number' | 'textarea';
+  type:
+    | 'text'
+    | 'email'
+    | 'password'
+    | 'select'
+    | 'date'
+    | 'number'
+    | 'textarea';
   label: string;
   placeholder?: string;
   required?: boolean;
@@ -52,10 +59,10 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleInputChange = (name: string, value: any) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
 
@@ -66,15 +73,15 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
 
     if (field.validation) {
       const { min, max, pattern, message } = field.validation;
-      
+
       if (min !== undefined && value < min) {
         return message || `${field.label} must be at least ${min}`;
       }
-      
+
       if (max !== undefined && value > max) {
         return message || `${field.label} must be at most ${max}`;
       }
-      
+
       if (pattern && !new RegExp(pattern).test(value)) {
         return message || `${field.label} format is invalid`;
       }
@@ -85,15 +92,15 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate all fields
     const newErrors: Record<string, string> = {};
     let isValid = true;
 
-    fields.forEach(field => {
+    fields.forEach((field) => {
       const value = formData[field.name];
       const error = validateField(field, value);
-      
+
       if (error) {
         newErrors[field.name] = error;
         isValid = false;
@@ -117,14 +124,14 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
           {field.label}
           {field.required && <span className="text-red-500 ml-1">*</span>}
         </label>
-        
+
         <div className="relative">
           {field.icon && (
             <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
               {field.icon}
             </div>
           )}
-          
+
           {field.type === 'select' ? (
             <select
               value={value}
@@ -153,8 +160,15 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                 </div>
               )}
               <DatePickerInput
-                value={value ? new Date(value) : null}
-                onChange={(date) => handleInputChange(field.name, date ? date.toISOString().split('T')[0] : '')}
+                value={value ? new Date(value + 'T00:00:00') : null}
+                onChange={(date) =>
+                  handleInputChange(
+                    field.name,
+                    date
+                      ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                      : ''
+                  )
+                }
                 placeholder={field.placeholder || 'dd/mm/yy'}
                 className={cn(
                   'w-full',
@@ -165,7 +179,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                     paddingLeft: field.icon ? '2.5rem' : '1rem',
                     paddingRight: '2.5rem',
                     height: '3rem',
-                    border: hasError ? '1px solid #ef4444' : '1px solid #d1d5db',
+                    border: hasError
+                      ? '1px solid #ef4444'
+                      : '1px solid #d1d5db',
                     borderRadius: '0.5rem',
                     fontSize: '1rem',
                     '&:focus': {
@@ -206,16 +222,23 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
               pattern={field.validation?.pattern}
             />
           )}
-          
+
           {(field.type === 'select' || field.type === 'date') && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <polyline points="6,9 12,15 18,9"></polyline>
               </svg>
             </div>
           )}
         </div>
-        
+
         {hasError && (
           <p className="text-sm text-red-600">{errors[field.name]}</p>
         )}
@@ -260,10 +283,14 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                 disabled={action.disabled || isLoading}
                 className={cn(
                   'flex-1 px-8 py-3 rounded-full font-medium transition-all duration-200 flex items-center justify-center',
-                  action.type === 'primary' && 'bg-gradient-to-r from-primary to-secondary text-white hover:shadow-lg',
-                  action.type === 'secondary' && 'bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white',
-                  action.type === 'outline' && 'bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white',
-                  (action.disabled || isLoading) && 'opacity-50 cursor-not-allowed'
+                  action.type === 'primary' &&
+                    'bg-gradient-to-r from-primary to-secondary text-white hover:shadow-lg',
+                  action.type === 'secondary' &&
+                    'bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white',
+                  action.type === 'outline' &&
+                    'bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white',
+                  (action.disabled || isLoading) &&
+                    'opacity-50 cursor-not-allowed'
                 )}
               >
                 {action.loading && (

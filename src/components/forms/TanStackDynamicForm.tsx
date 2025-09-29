@@ -119,10 +119,12 @@ export function TanStackDynamicForm<T extends z.ZodType>({
                 <DatePickerInput
                   label={field.label}
                   placeholder={field.placeholder || 'dd/mm/yy'}
-                  value={value ? new Date(value) : null}
+                  value={value ? new Date(value + 'T00:00:00') : null}
                   onChange={(date) =>
                     fieldApi.handleChange(
-                      (date ? date.toISOString().split('T')[0] : '') as any
+                      (date
+                        ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                        : '') as any
                     )
                   }
                   onBlur={fieldApi.handleBlur}
