@@ -4,10 +4,10 @@ import React, { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { zodValidator } from '@tanstack/zod-form-adapter';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { Checkbox, TextInput, Select } from '@mantine/core';
+import { Checkbox, TextInput, Select, RingProgress } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { cn } from '@/utils/cn';
 import {
@@ -139,7 +139,10 @@ export const PlanYourExperienceModal: React.FC<
           const value = fieldApi.state.value || [];
           const hasError = fieldApi.state.meta.errors.length > 0;
           const errorMessage = hasError
-            ? String(fieldApi.state.meta.errors[0])
+            ? typeof fieldApi.state.meta.errors[0] === 'string'
+              ? fieldApi.state.meta.errors[0]
+              : fieldApi.state.meta.errors[0]?.message ||
+                'Please select at least one service'
             : '';
 
           return (
@@ -182,11 +185,11 @@ export const PlanYourExperienceModal: React.FC<
 
   const renderStep2 = () => (
     <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-xl font-bold text-gray-900 mb-2">
+      <div>
+        <h3 className="text-lg font-bold text-gray-900 mb-2 font-lato">
           When and where are you traveling?
         </h3>
-        <p className="text-gray-600 text-sm">
+        <p className="text-gray-600 text-sm font-lato">
           Help us understand your travel plans and group size
         </p>
       </div>
@@ -197,7 +200,10 @@ export const PlanYourExperienceModal: React.FC<
           {(fieldApi) => {
             const hasError = fieldApi.state.meta.errors.length > 0;
             const errorMessage = hasError
-              ? String(fieldApi.state.meta.errors[0])
+              ? typeof fieldApi.state.meta.errors[0] === 'string'
+                ? fieldApi.state.meta.errors[0]
+                : fieldApi.state.meta.errors[0]?.message ||
+                  'Destination is required'
               : '';
 
             return (
@@ -225,7 +231,10 @@ export const PlanYourExperienceModal: React.FC<
             {(fieldApi) => {
               const hasError = fieldApi.state.meta.errors.length > 0;
               const errorMessage = hasError
-                ? String(fieldApi.state.meta.errors[0])
+                ? typeof fieldApi.state.meta.errors[0] === 'string'
+                  ? fieldApi.state.meta.errors[0]
+                  : fieldApi.state.meta.errors[0]?.message ||
+                    'Arrival date is required'
                 : '';
 
               return (
@@ -256,7 +265,10 @@ export const PlanYourExperienceModal: React.FC<
             {(fieldApi) => {
               const hasError = fieldApi.state.meta.errors.length > 0;
               const errorMessage = hasError
-                ? String(fieldApi.state.meta.errors[0])
+                ? typeof fieldApi.state.meta.errors[0] === 'string'
+                  ? fieldApi.state.meta.errors[0]
+                  : fieldApi.state.meta.errors[0]?.message ||
+                    'Field is required'
                 : '';
 
               return (
@@ -291,7 +303,10 @@ export const PlanYourExperienceModal: React.FC<
             {(fieldApi) => {
               const hasError = fieldApi.state.meta.errors.length > 0;
               const errorMessage = hasError
-                ? String(fieldApi.state.meta.errors[0])
+                ? typeof fieldApi.state.meta.errors[0] === 'string'
+                  ? fieldApi.state.meta.errors[0]
+                  : fieldApi.state.meta.errors[0]?.message ||
+                    'Field is required'
                 : '';
 
               return (
@@ -317,7 +332,10 @@ export const PlanYourExperienceModal: React.FC<
             {(fieldApi) => {
               const hasError = fieldApi.state.meta.errors.length > 0;
               const errorMessage = hasError
-                ? String(fieldApi.state.meta.errors[0])
+                ? typeof fieldApi.state.meta.errors[0] === 'string'
+                  ? fieldApi.state.meta.errors[0]
+                  : fieldApi.state.meta.errors[0]?.message ||
+                    'Field is required'
                 : '';
 
               return (
@@ -346,11 +364,11 @@ export const PlanYourExperienceModal: React.FC<
 
   const renderStep3 = () => (
     <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-xl font-bold text-gray-900 mb-2">
+      <div>
+        <h3 className="text-lg font-bold text-gray-900 mb-2 font-lato">
           How can we reach you?
         </h3>
-        <p className="text-gray-600 text-sm">
+        <p className="text-gray-600 text-sm font-lato">
           We&apos;ll save your details and give you the option to continue on
           WhatsApp.
         </p>
@@ -533,34 +551,23 @@ export const PlanYourExperienceModal: React.FC<
       <span className="text-sm text-gray-500 font-medium">
         Step {currentStep}/3
       </span>
-      <div className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center relative">
-        <svg
-          className="w-8 h-8 absolute inset-0 transform -rotate-90"
-          viewBox="0 0 32 32"
-        >
-          <circle
-            cx="16"
-            cy="16"
-            r="14"
-            stroke="currentColor"
-            strokeWidth="2"
-            fill="none"
-            className="text-gray-300"
-          />
-          <circle
-            cx="16"
-            cy="16"
-            r="14"
-            stroke="currentColor"
-            strokeWidth="2"
-            fill="none"
-            strokeDasharray={`${2 * Math.PI * 14}`}
-            strokeDashoffset={`${2 * Math.PI * 14 * (1 - currentStep / 3)}`}
-            className="text-purple-500 transition-all duration-500"
-            strokeLinecap="round"
-          />
-        </svg>
-      </div>
+      <RingProgress
+        size={32}
+        thickness={3}
+        roundCaps
+        sections={[
+          {
+            value: (currentStep / 3) * 100,
+            color: '#7530FF', // Purple color from design system
+          },
+        ]}
+        styles={{
+          root: {
+            width: '32px',
+            height: '32px',
+          },
+        }}
+      />
     </div>
   );
 
@@ -573,8 +580,34 @@ export const PlanYourExperienceModal: React.FC<
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} size="lg">
-      <div className="p-6">
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      size="lg"
+      showCloseButton={false}
+    >
+      <motion.div
+        className="p-6"
+        layout
+        transition={{
+          duration: 0.8,
+          ease: [0.16, 1, 0.3, 1],
+          layout: {
+            duration: 1.0,
+            ease: [0.16, 1, 0.3, 1],
+          },
+        }}
+      >
+        {/* Close Button */}
+        <div className="flex justify-start mb-6">
+          <button
+            onClick={handleClose}
+            className="text-gray-800 hover:text-gray-900 transition-colors"
+          >
+            <X className="w-6 h-6 stroke-2" />
+          </button>
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900 font-playfair">
@@ -584,27 +617,48 @@ export const PlanYourExperienceModal: React.FC<
         </div>
 
         {/* Form Content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {currentStep === 1 && renderStep1()}
-            {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && renderStep3()}
-          </motion.div>
-        </AnimatePresence>
+        <motion.div
+          layout
+          transition={{
+            duration: 1.0,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{
+                opacity: 1,
+                x: 0,
+                transition: {
+                  duration: 0.6,
+                  ease: [0.16, 1, 0.3, 1],
+                },
+              }}
+              exit={{
+                opacity: 0,
+                x: -20,
+                transition: {
+                  duration: 0.4,
+                  ease: [0.16, 1, 0.3, 1],
+                },
+              }}
+            >
+              {currentStep === 1 && renderStep1()}
+              {currentStep === 2 && renderStep2()}
+              {currentStep === 3 && renderStep3()}
+            </motion.div>
+          </AnimatePresence>
+        </motion.div>
 
         {/* Action Buttons */}
-        <div className="flex justify-between mt-8 pt-6">
+        <div className="flex gap-4 mt-8 pt-6">
           <Button
             onClick={handlePrevious}
             variant="outline"
             disabled={currentStep === 1}
-            className="px-6 py-2 text-gray-600 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 py-3 text-purple-600 border-purple-600 hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed rounded-full"
           >
             Previous
           </Button>
@@ -620,7 +674,7 @@ export const PlanYourExperienceModal: React.FC<
               }
             }}
             variant="primary"
-            className="px-8 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-medium rounded-full"
+            className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium rounded-full"
             disabled={
               (currentStep === 1 && step1Form.state.isSubmitting) ||
               (currentStep === 2 && step2Form.state.isSubmitting) ||
@@ -630,7 +684,7 @@ export const PlanYourExperienceModal: React.FC<
             {currentStep === 3 ? 'Submit' : 'Continue'}
           </Button>
         </div>
-      </div>
+      </motion.div>
     </Modal>
   );
 };
