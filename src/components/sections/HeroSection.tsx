@@ -44,7 +44,9 @@ export const HeroSection: React.FC = () => {
               <span className="block">Experiences</span>
             </h1>
             <p className="text-lg md:text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-              From vibrant nightlife to cultural immersion, discover handpicked experiences that showcase the best of Nigeria with luxury and safety guaranteed.
+              From vibrant nightlife to cultural immersion, discover handpicked
+              experiences that showcase the best of Nigeria with luxury and
+              safety guaranteed.
             </p>
           </motion.div>
 

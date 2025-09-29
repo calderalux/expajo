@@ -188,11 +188,18 @@ export const PlanYourExperienceModal: React.FC<
                   }}
                   onBlur={fieldApi.handleBlur}
                   styles={{
+                    root: {
+                      cursor: 'pointer',
+                    },
                     label: {
                       fontSize: '1rem',
                       color: '#374151',
                       fontWeight: 500,
                       fontFamily: 'Lato, sans-serif',
+                      cursor: 'pointer',
+                    },
+                    input: {
+                      cursor: 'pointer',
                     },
                   }}
                 />
