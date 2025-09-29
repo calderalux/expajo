@@ -37,6 +37,7 @@ export interface TanStackDynamicFormProps<T extends z.ZodType> {
   actions: FormAction[];
   schema: T;
   onSubmit: (data: z.infer<T>) => void | Promise<void>;
+  onPrimaryActionClick?: () => void;
   className?: string;
   isLoading?: boolean;
   defaultValues?: Partial<z.infer<T>>;
@@ -49,6 +50,7 @@ export function TanStackDynamicForm<T extends z.ZodType>({
   actions,
   schema,
   onSubmit,
+  onPrimaryActionClick,
   className = '',
   isLoading = false,
   defaultValues = {},
@@ -68,20 +70,25 @@ export function TanStackDynamicForm<T extends z.ZodType>({
       <form.Field key={field.name} name={field.name as any}>
         {(fieldApi) => {
           const fieldState = fieldApi.state;
-          const hasError = fieldState.meta.errors.length > 0;
           const value = fieldState.value || '';
-          const errorMessage = hasError
-            ? (() => {
-                const error = fieldState.meta.errors[0];
-                if (typeof error === 'string') {
-                  return error;
-                }
-                if (error && typeof error === 'object' && 'message' in error) {
-                  return error.message;
-                }
-                return 'Invalid input';
-              })()
-            : '';
+          const isTouched = fieldState.meta.isTouched;
+
+          // Only validate if field has been touched
+          let hasError = false;
+          let errorMessage = '';
+
+          if (isTouched) {
+            // Get the field schema for individual validation
+            const fieldSchema = (schema as any).shape?.[field.name];
+            if (fieldSchema) {
+              const validationResult = fieldSchema.safeParse(value);
+              if (!validationResult.success) {
+                hasError = true;
+                errorMessage =
+                  validationResult.error.errors[0]?.message || 'Invalid input';
+              }
+            }
+          }
 
           return (
             <div className="space-y-2">
@@ -248,17 +255,10 @@ export function TanStackDynamicForm<T extends z.ZodType>({
       {/* Form Card */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
         <form
-          onSubmit={async (e) => {
+          onSubmit={(e) => {
             e.preventDefault();
             e.stopPropagation();
-
-            // Validate all fields before submission
-            await form.validateAllFields('submit');
-
-            // Only submit if validation passes
-            if (form.state.isValid) {
-              form.handleSubmit();
-            }
+            form.handleSubmit();
           }}
           className="space-y-6"
         >
@@ -280,7 +280,22 @@ export function TanStackDynamicForm<T extends z.ZodType>({
                       ? 'secondary'
                       : 'outline'
                 }
-                onClick={action.onClick}
+                onClick={async () => {
+                  if (action.type === 'primary' && onPrimaryActionClick) {
+                    // Validate all fields when Start Planning is clicked
+                    const formData = form.state.values;
+                    const validationResult = schema.safeParse(formData);
+
+                    if (validationResult.success) {
+                      onPrimaryActionClick();
+                    } else {
+                      // Trigger validation to show errors for all fields
+                      form.handleSubmit();
+                    }
+                  } else if (action.onClick) {
+                    action.onClick();
+                  }
+                }}
                 disabled={
                   action.disabled || isLoading || form.state.isSubmitting
                 }

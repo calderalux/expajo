@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { MapPin, Calendar, Users } from 'lucide-react';
+import { PlanYourExperienceModal } from '@/components/modals/PlanYourExperienceModal';
 import {
   TanStackDynamicForm,
   FormFieldConfig,
@@ -40,6 +41,7 @@ const stats = [
 
 export const PlanFormSection: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
   // Core form fields using TanStack Form + Zod
@@ -64,6 +66,9 @@ export const PlanFormSection: React.FC = () => {
       label: 'Start Planning',
       type: 'primary',
       loading: isLoading,
+      onClick: () => {
+        // Don't add onClick here - we'll handle it in the form submission
+      },
     },
     {
       id: 'browse-experiences',
@@ -77,12 +82,33 @@ export const PlanFormSection: React.FC = () => {
   ];
 
   const handleFormSubmit = async (data: PlanRequestData) => {
+    // If form is valid, open the three-step modal instead of submitting to API
+    console.log('Form is valid, opening three-step modal with data:', data);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleModalSuccess = async (data: any) => {
+    console.log('Three-step form completed:', data);
     setIsLoading(true);
 
     try {
-      // Submit to database using TanStack Form + Zod validated data
+      // Combine the original form data with the three-step form data
+      const combinedData = {
+        ...data.step2, // destination, arrivalDate, departureDate, adults, children
+        services: data.step1.services,
+        fullName: data.step3.fullName,
+        email: data.step3.email,
+        phone: data.step3.phone,
+        consent: data.step3.consent,
+      };
+
+      // Submit to database using the combined data
       const { data: result, error } =
-        await PlanRequestService.createPlanRequest(data);
+        await PlanRequestService.createPlanRequest(combinedData);
 
       if (error) {
         console.error('Error submitting plan request:', error);
@@ -91,7 +117,6 @@ export const PlanFormSection: React.FC = () => {
       }
 
       console.log('Plan request submitted successfully:', result);
-
       // TODO: Show success message using toast
       // TODO: Send email notification
       // TODO: Redirect to planning page or show confirmation
@@ -100,6 +125,7 @@ export const PlanFormSection: React.FC = () => {
       // TODO: Show error message to user using toast
     } finally {
       setIsLoading(false);
+      setIsModalOpen(false);
     }
   };
 
@@ -113,6 +139,7 @@ export const PlanFormSection: React.FC = () => {
           actions={formActions}
           schema={planRequestSchema}
           onSubmit={handleFormSubmit}
+          onPrimaryActionClick={() => setIsModalOpen(true)}
           isLoading={isLoading}
         />
 
@@ -146,6 +173,13 @@ export const PlanFormSection: React.FC = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Plan Your Experience Modal */}
+      <PlanYourExperienceModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onSuccess={handleModalSuccess}
+      />
     </section>
   );
 };
