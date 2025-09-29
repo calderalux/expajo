@@ -697,7 +697,7 @@ export const PlanYourExperienceModal: React.FC<
             onClick={handlePrevious}
             variant="outline"
             disabled={currentStep === 1}
-            className="flex-1 py-3 text-purple-600 border-purple-600 hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+            className="flex-1 py-3 text-purple-600 border-purple-600 hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed rounded-full focus:outline-none focus:ring-0 focus:ring-offset-0"
           >
             Previous
           </Button>
@@ -713,7 +713,7 @@ export const PlanYourExperienceModal: React.FC<
               }
             }}
             variant="primary"
-            className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium rounded-full focus:outline-none focus:ring-0 focus:ring-offset-0"
             disabled={
               (currentStep === 1 && step1Form.state.isSubmitting) ||
               (currentStep === 2 && step2Form.state.isSubmitting) ||
