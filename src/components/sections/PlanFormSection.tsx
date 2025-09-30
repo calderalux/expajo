@@ -85,6 +85,10 @@ export const PlanFormSection: React.FC = () => {
   const handleFormSubmit = async (data: PlanRequestData) => {
     // Store the form data and open the three-step modal
     console.log('Form is valid, opening three-step modal with data:', data);
+    console.log('Travel dates type:', typeof data.travel_dates);
+    console.log('Travel dates value:', data.travel_dates);
+    console.log('First date type:', typeof data.travel_dates[0]);
+    console.log('First date value:', data.travel_dates[0]);
     setFormData(data);
     setIsModalOpen(true);
   };
@@ -187,7 +191,34 @@ export const PlanFormSection: React.FC = () => {
                 location: formData.location,
                 travel_date:
                   formData.travel_dates && formData.travel_dates[0]
-                    ? formData.travel_dates[0].toISOString().split('T')[0]
+                    ? (() => {
+                        const date = formData.travel_dates[0];
+                        console.log(
+                          'Converting date:',
+                          date,
+                          'type:',
+                          typeof date
+                        );
+
+                        // Handle both Date objects and strings
+                        if (date instanceof Date) {
+                          return date.toISOString().split('T')[0];
+                        } else if (typeof date === 'string') {
+                          const parsedDate = new Date(date);
+                          if (!isNaN(parsedDate.getTime())) {
+                            return parsedDate.toISOString().split('T')[0];
+                          }
+                        } else if (
+                          date &&
+                          typeof date === 'object' &&
+                          'toISOString' in date
+                        ) {
+                          // Handle Date-like objects
+                          return (date as any).toISOString().split('T')[0];
+                        }
+                        console.warn('Could not convert date:', date);
+                        return '';
+                      })()
                     : '',
                 guests: formData.guests.toString(),
               }
