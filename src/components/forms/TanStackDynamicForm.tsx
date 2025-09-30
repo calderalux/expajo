@@ -63,6 +63,11 @@ export function TanStackDynamicForm<T extends z.ZodType>({
   isLoading = false,
   defaultValues = {},
 }: TanStackDynamicFormProps<T>) {
+  // Track which fields have been blurred for custom validation
+  const [blurredFields, setBlurredFields] = React.useState<Set<string>>(
+    new Set()
+  );
+
   const form = useForm({
     defaultValues: {
       ...defaultValues,
@@ -96,19 +101,36 @@ export function TanStackDynamicForm<T extends z.ZodType>({
 
           // Get the field schema for individual validation
           const fieldSchema = (schema as any).shape?.[field.name];
-          if (fieldSchema && isTouched) {
+          if (fieldSchema) {
             // For date-range fields, ensure we have an array
             const fieldValue =
               field.type === 'date-range' && !Array.isArray(value)
                 ? [null, null]
                 : value;
 
-            // Validate field only if touched
-            const validationResult = fieldSchema.safeParse(fieldValue);
-            if (!validationResult.success) {
-              hasError = true;
-              errorMessage =
-                validationResult.error.errors[0]?.message || 'Invalid input';
+            // Special handling for date-range fields - only validate on blur or form submission
+            if (field.type === 'date-range' && field.required) {
+              const hasBeenBlurred = blurredFields.has(field.name);
+              const isFormSubmitted = form.state.isSubmitted;
+
+              // Only validate if field has been blurred or form has been submitted
+              if (hasBeenBlurred || isFormSubmitted) {
+                const validationResult = fieldSchema.safeParse(fieldValue);
+                if (!validationResult.success) {
+                  hasError = true;
+                  errorMessage =
+                    validationResult.error.errors[0]?.message ||
+                    'Select travel dates';
+                }
+              }
+            } else if (isTouched) {
+              // For other fields, validate if touched
+              const validationResult = fieldSchema.safeParse(fieldValue);
+              if (!validationResult.success) {
+                hasError = true;
+                errorMessage =
+                  validationResult.error.errors[0]?.message || 'Invalid input';
+              }
             }
           }
 
@@ -220,7 +242,11 @@ export function TanStackDynamicForm<T extends z.ZodType>({
                         fieldApi.handleChange([] as any);
                       }
                     }}
-                    onBlur={fieldApi.handleBlur}
+                    onBlur={() => {
+                      fieldApi.handleBlur();
+                      // Mark this field as blurred for validation
+                      setBlurredFields((prev) => new Set(prev).add(field.name));
+                    }}
                     leftSection={field.icon}
                     required={field.required}
                     minDate={new Date()}
@@ -388,10 +414,6 @@ export function TanStackDynamicForm<T extends z.ZodType>({
                       onPrimaryActionClick();
                     } else {
                       // Mark all fields as touched to show validation errors
-                      form.setFieldMeta('travel_dates', (prev) => ({
-                        ...prev,
-                        isTouched: true,
-                      }));
                       form.setFieldMeta('location', (prev) => ({
                         ...prev,
                         isTouched: true,
@@ -400,6 +422,11 @@ export function TanStackDynamicForm<T extends z.ZodType>({
                         ...prev,
                         isTouched: true,
                       }));
+
+                      // Mark date field as blurred for validation
+                      setBlurredFields((prev) =>
+                        new Set(prev).add('travel_dates')
+                      );
 
                       // Trigger validation to show errors for all fields
                       form.handleSubmit();

@@ -106,7 +106,7 @@ export const planRequestFields: FormFieldConfig[] = [
   {
     name: 'location',
     type: 'select',
-    label: 'State/City',
+    label: 'Destination',
     placeholder: 'Select your destination',
     required: true,
     options: nigerianStates.map((state) => ({

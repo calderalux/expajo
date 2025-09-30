@@ -640,7 +640,7 @@ export const PlanYourExperienceModal: React.FC<
                   label={
                     <span className="text-sm text-gray-600">
                       I agree to personalized travel recommendations via
-                      WhatsApp and email. I understand that NaijaLux will use my
+                      WhatsApp and email. I understand that Expajo will use my
                       information to create a custom itinerary.
                     </span>
                   }
