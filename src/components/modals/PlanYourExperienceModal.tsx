@@ -7,7 +7,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { Checkbox, TextInput, Select, RingProgress } from '@mantine/core';
+import {
+  Checkbox,
+  TextInput,
+  Select,
+  RingProgress,
+  Combobox,
+  useCombobox,
+} from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { cn } from '@/utils/cn';
 import {
@@ -20,6 +27,22 @@ import {
   Step2Data,
   Step3Data,
 } from '@/lib/validations/threeStepForm';
+
+// Country data for phone input
+const countries = [
+  { code: 'NG', name: 'Nigeria', flag: '🇳🇬', dialCode: '+234' },
+  { code: 'US', name: 'United States', flag: '🇺🇸', dialCode: '+1' },
+  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧', dialCode: '+44' },
+  { code: 'CA', name: 'Canada', flag: '🇨🇦', dialCode: '+1' },
+  { code: 'AU', name: 'Australia', flag: '🇦🇺', dialCode: '+61' },
+  { code: 'DE', name: 'Germany', flag: '🇩🇪', dialCode: '+49' },
+  { code: 'FR', name: 'France', flag: '🇫🇷', dialCode: '+33' },
+  { code: 'IT', name: 'Italy', flag: '🇮🇹', dialCode: '+39' },
+  { code: 'ES', name: 'Spain', flag: '🇪🇸', dialCode: '+34' },
+  { code: 'ZA', name: 'South Africa', flag: '🇿🇦', dialCode: '+27' },
+  { code: 'KE', name: 'Kenya', flag: '🇰🇪', dialCode: '+254' },
+  { code: 'GH', name: 'Ghana', flag: '🇬🇭', dialCode: '+233' },
+];
 
 interface PlanYourExperienceModalProps {
   isOpen: boolean;
@@ -41,11 +64,18 @@ export const PlanYourExperienceModal: React.FC<
 > = ({ isOpen, onClose, onSuccess, initialData }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState(countries[0]); // Default to Nigeria
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [formData, setFormData] = useState<{
     step1?: Step1Data;
     step2?: Step2Data;
     step3?: Step3Data;
   }>({});
+
+  // Combobox for country selector
+  const combobox = useCombobox({
+    onDropdownClose: () => combobox.resetSelectedOption(),
+  });
 
   // Reset form data when modal opens with new initial data
   useEffect(() => {
@@ -479,24 +509,97 @@ export const PlanYourExperienceModal: React.FC<
                 <label className="block text-sm font-medium text-gray-700">
                   Phone Number (WhatsApp)
                 </label>
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-                    <div className="w-6 h-4 bg-green-600 rounded-sm flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">🇳🇬</span>
-                    </div>
-                    <span className="text-gray-600 text-sm">+234</span>
-                  </div>
+                <div className="flex">
+                  {/* Country Selector */}
+                  <Combobox
+                    store={combobox}
+                    onOptionSubmit={(value) => {
+                      const country = countries.find((c) => c.code === value);
+                      if (country) {
+                        setSelectedCountry(country);
+                        // Update the form field with the full phone number
+                        const fullPhone = `${country.dialCode}${phoneNumber}`;
+                        fieldApi.handleChange(fullPhone);
+                      }
+                      combobox.closeDropdown();
+                    }}
+                  >
+                    <Combobox.Target>
+                      <button
+                        type="button"
+                        className="flex items-center justify-center space-x-2 px-3 py-3 h-12 border border-gray-300 rounded-l-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-w-[90px]"
+                        onClick={() => combobox.toggleDropdown()}
+                      >
+                        <span className="text-2xl leading-none">
+                          {selectedCountry.flag}
+                        </span>
+                        <span className="text-sm font-bold text-gray-800 leading-none">
+                          {selectedCountry.dialCode}
+                        </span>
+                        <svg
+                          className="w-3 h-3 text-gray-400 ml-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2.5}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                    </Combobox.Target>
+
+                    <Combobox.Dropdown className="border border-gray-200 shadow-lg rounded-lg overflow-hidden">
+                      <Combobox.Options className="max-h-60 overflow-y-auto bg-white">
+                        {countries.map((country) => (
+                          <Combobox.Option
+                            key={country.code}
+                            value={country.code}
+                            className="flex items-center justify-center space-x-3 px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors duration-150 border-b border-gray-100 last:border-b-0"
+                          >
+                            <span className="text-2xl leading-none">
+                              {country.flag}
+                            </span>
+                            <span className="text-sm font-bold text-gray-800">
+                              {country.dialCode}
+                            </span>
+                          </Combobox.Option>
+                        ))}
+                      </Combobox.Options>
+                    </Combobox.Dropdown>
+                  </Combobox>
+
+                  {/* Phone Number Input */}
                   <TextInput
                     placeholder="Phone Number"
-                    value={fieldApi.state.value || ''}
-                    onChange={(e) => fieldApi.handleChange(e.target.value)}
+                    value={phoneNumber}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setPhoneNumber(value);
+                      // Update the form field with the full phone number
+                      const fullPhone = `${selectedCountry.dialCode}${value}`;
+                      fieldApi.handleChange(fullPhone);
+                    }}
                     onBlur={fieldApi.handleBlur}
                     error={errorMessage}
-                    className="pl-20"
+                    className="flex-1"
                     styles={{
                       input: {
                         height: '3rem',
                         fontSize: '1rem',
+                        borderTopLeftRadius: 0,
+                        borderBottomLeftRadius: 0,
+                        borderLeft: 'none',
+                        borderColor: errorMessage ? '#ef4444' : '#d1d5db',
+                        '&:focus': {
+                          borderColor: errorMessage ? '#ef4444' : '#3b82f6',
+                          boxShadow: errorMessage
+                            ? '0 0 0 1px #ef4444'
+                            : '0 0 0 1px #3b82f6',
+                        },
                       },
                     }}
                   />
