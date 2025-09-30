@@ -55,6 +55,7 @@ interface PlanYourExperienceModalProps {
   initialData?: {
     location?: string;
     travel_date?: string;
+    departure_date?: string;
     guests?: string;
   };
 }
@@ -115,7 +116,8 @@ export const PlanYourExperienceModal: React.FC<
           : ''),
       arrivalDate:
         formData.step2?.arrivalDate || initialData?.travel_date || '',
-      departureDate: formData.step2?.departureDate || '',
+      departureDate:
+        formData.step2?.departureDate || initialData?.departure_date || '',
       adults: formData.step2?.adults?.toString() || initialData?.guests || '1',
       children: formData.step2?.children?.toString() || '0',
     },

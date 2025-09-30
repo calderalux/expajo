@@ -220,6 +220,37 @@ export const PlanFormSection: React.FC = () => {
                         return '';
                       })()
                     : '',
+                departure_date:
+                  formData.travel_dates && formData.travel_dates[1]
+                    ? (() => {
+                        const date = formData.travel_dates[1];
+                        console.log(
+                          'Converting departure date:',
+                          date,
+                          'type:',
+                          typeof date
+                        );
+
+                        // Handle both Date objects and strings
+                        if (date instanceof Date) {
+                          return date.toISOString().split('T')[0];
+                        } else if (typeof date === 'string') {
+                          const parsedDate = new Date(date);
+                          if (!isNaN(parsedDate.getTime())) {
+                            return parsedDate.toISOString().split('T')[0];
+                          }
+                        } else if (
+                          date &&
+                          typeof date === 'object' &&
+                          'toISOString' in date
+                        ) {
+                          // Handle Date-like objects
+                          return (date as any).toISOString().split('T')[0];
+                        }
+                        console.warn('Could not convert departure date:', date);
+                        return '';
+                      })()
+                    : '',
                 guests: formData.guests.toString(),
               }
             : undefined
