@@ -90,39 +90,25 @@ export function TanStackDynamicForm<T extends z.ZodType>({
           const value = fieldState.value || '';
           const isTouched = fieldState.meta.isTouched;
 
-          // Only validate if field has been touched
+          // Validate field - show errors only when touched or form is submitted
           let hasError = false;
           let errorMessage = '';
 
-          if (isTouched) {
-            // Get the field schema for individual validation
-            const fieldSchema = (schema as any).shape?.[field.name];
-            if (fieldSchema) {
-              // For date-range fields, ensure we have an array
-              const fieldValue =
-                field.type === 'date-range' && !Array.isArray(value)
-                  ? [null, null]
-                  : value;
-              
-              // For date-range fields, only validate if we have some data
-              if (field.type === 'date-range') {
-                const hasSomeData = Array.isArray(fieldValue) && fieldValue.some(date => date !== null);
-                if (hasSomeData) {
-                  const validationResult = fieldSchema.safeParse(fieldValue);
-                  if (!validationResult.success) {
-                    hasError = true;
-                    errorMessage =
-                      validationResult.error.errors[0]?.message || 'Invalid input';
-                  }
-                }
-              } else {
-                const validationResult = fieldSchema.safeParse(fieldValue);
-                if (!validationResult.success) {
-                  hasError = true;
-                  errorMessage =
-                    validationResult.error.errors[0]?.message || 'Invalid input';
-                }
-              }
+          // Get the field schema for individual validation
+          const fieldSchema = (schema as any).shape?.[field.name];
+          if (fieldSchema && isTouched) {
+            // For date-range fields, ensure we have an array
+            const fieldValue =
+              field.type === 'date-range' && !Array.isArray(value)
+                ? [null, null]
+                : value;
+
+            // Validate field only if touched
+            const validationResult = fieldSchema.safeParse(fieldValue);
+            if (!validationResult.success) {
+              hasError = true;
+              errorMessage =
+                validationResult.error.errors[0]?.message || 'Invalid input';
             }
           }
 
@@ -401,6 +387,20 @@ export function TanStackDynamicForm<T extends z.ZodType>({
                     if (validationResult.success) {
                       onPrimaryActionClick();
                     } else {
+                      // Mark all fields as touched to show validation errors
+                      form.setFieldMeta('travel_dates', (prev) => ({
+                        ...prev,
+                        isTouched: true,
+                      }));
+                      form.setFieldMeta('location', (prev) => ({
+                        ...prev,
+                        isTouched: true,
+                      }));
+                      form.setFieldMeta('guests', (prev) => ({
+                        ...prev,
+                        isTouched: true,
+                      }));
+
                       // Trigger validation to show errors for all fields
                       form.handleSubmit();
                     }

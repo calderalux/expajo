@@ -42,13 +42,11 @@ export const planRequestSchema = z.object({
       ])
     )
     .refine((dates) => {
-      // Allow empty array or null values during initial state
-      if (!dates || dates.length === 0) return true;
-      
-      // If we have dates, validate them
+      // Require exactly 2 dates
+      if (!dates || dates.length !== 2) return false;
+
       const [arrival, departure] = dates;
-      if (!arrival) return false;
-      if (!departure) return true; // Allow partial selection
+      if (!arrival || !departure) return false;
 
       // Convert to Date objects if they're strings
       const arrivalDate = arrival instanceof Date ? arrival : new Date(arrival);
@@ -59,12 +57,7 @@ export const planRequestSchema = z.object({
       today.setHours(0, 0, 0, 0);
 
       return arrivalDate >= today && departureDate > arrivalDate;
-    }, 'Arrival date must be in the future and departure date must be after arrival date')
-    .refine((dates) => {
-      // Only require exactly 2 dates if we have any dates at all
-      if (!dates || dates.length === 0) return true;
-      return dates.length === 2;
-    }, 'Please select both arrival and departure dates')
+    }, 'Select travel dates')
     .transform((dates) => {
       // Filter out null values and ensure we have exactly 2 dates for final validation
       const validDates = dates
