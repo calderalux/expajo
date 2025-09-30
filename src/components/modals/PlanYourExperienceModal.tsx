@@ -731,8 +731,22 @@ export const PlanYourExperienceModal: React.FC<
 
   if (showSuccess) {
     return (
-      <Modal isOpen={isOpen} onClose={handleClose} size="md">
-        <div className="p-6">{renderSuccess()}</div>
+      <Modal
+        isOpen={isOpen}
+        onClose={handleClose}
+        size="md"
+        showCloseButton={false}
+      >
+        <div className="relative p-6">
+          {/* X button in top right corner */}
+          <button
+            onClick={handleClose}
+            className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded-full transition-colors duration-200"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+          {renderSuccess()}
+        </div>
       </Modal>
     );
   }
