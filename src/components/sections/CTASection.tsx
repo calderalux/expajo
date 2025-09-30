@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CTAButton } from '@/components/ui/CTAButton';
+import { PlanYourExperienceModal } from '@/components/modals/PlanYourExperienceModal';
 
 interface CTASectionProps {
   title?: string;
@@ -14,13 +15,33 @@ interface CTASectionProps {
 }
 
 export const CTASection: React.FC<CTASectionProps> = ({
-  title = "Ready to Create Your Own Story?",
+  title = 'Ready to Create Your Own Story?',
   description = "Join hundreds of satisfied travelers who've discovered the magic of Nigeria with Expajo.",
-  buttonText = "Start Planning Your Journey",
+  buttonText = 'Start Planning Your Journey',
   buttonHref,
   onButtonClick,
   className = '',
 }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleButtonClick = () => {
+    if (onButtonClick) {
+      onButtonClick();
+    } else {
+      // Default behavior: open the modal
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleModalSuccess = async (data: any) => {
+    console.log('Plan request completed from CTA section:', data);
+    // Handle the success case - could redirect or show success message
+    setIsModalOpen(false);
+  };
   return (
     <section className={`py-16 lg:py-24 bg-white ${className}`}>
       <div className="container mx-auto px-4">
@@ -45,7 +66,7 @@ export const CTASection: React.FC<CTASectionProps> = ({
             {/* CTA Button */}
             <div className="pt-4">
               <CTAButton
-                onClick={onButtonClick}
+                onClick={handleButtonClick}
                 href={buttonHref}
                 size="lg"
                 className="inline-block"
@@ -56,6 +77,13 @@ export const CTASection: React.FC<CTASectionProps> = ({
           </motion.div>
         </div>
       </div>
+
+      {/* Plan Your Experience Modal */}
+      <PlanYourExperienceModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onSuccess={handleModalSuccess}
+      />
     </section>
   );
 };
