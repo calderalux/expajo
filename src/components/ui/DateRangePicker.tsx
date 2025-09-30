@@ -32,16 +32,12 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
 }) => {
   return (
     <div className="w-full">
-      {label && (
-        <label className="label">
-          {label}
-        </label>
-      )}
-      
+      {label && <label className="label">{label}</label>}
+
       <DatePickerInput
         type="range"
         value={value}
-        onChange={onChange}
+        onChange={(dates) => onChange(dates as [Date | null, Date | null])}
         placeholder={placeholder}
         minDate={minDate}
         maxDate={maxDate}
@@ -63,10 +59,8 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
           },
         }}
       />
-      
-      {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
-      )}
+
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
       {helperText && !error && (
         <p className="mt-1 text-sm text-gray-500">{helperText}</p>
       )}

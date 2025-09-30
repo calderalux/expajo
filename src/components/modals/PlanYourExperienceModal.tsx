@@ -309,8 +309,8 @@ export const PlanYourExperienceModal: React.FC<
                   }
                   onChange={(date) =>
                     fieldApi.handleChange(
-                      date
-                        ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                      date && typeof date === 'object' && 'getFullYear' in date
+                        ? `${(date as Date).getFullYear()}-${String((date as Date).getMonth() + 1).padStart(2, '0')}-${String((date as Date).getDate()).padStart(2, '0')}`
                         : ''
                     )
                   }
@@ -347,8 +347,8 @@ export const PlanYourExperienceModal: React.FC<
                   }
                   onChange={(date) =>
                     fieldApi.handleChange(
-                      date
-                        ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                      date && typeof date === 'object' && 'getFullYear' in date
+                        ? `${(date as Date).getFullYear()}-${String((date as Date).getMonth() + 1).padStart(2, '0')}-${String((date as Date).getDate()).padStart(2, '0')}`
                         : ''
                     )
                   }

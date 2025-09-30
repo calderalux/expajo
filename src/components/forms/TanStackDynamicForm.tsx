@@ -4,15 +4,23 @@ import React from 'react';
 import { useForm } from '@tanstack/react-form';
 import { zodValidator } from '@tanstack/zod-form-adapter';
 import { motion } from 'framer-motion';
-import { DatePickerInput } from '@mantine/dates';
+import { DatePickerInput, DatePicker } from '@mantine/dates';
 import { Select, TextInput, Textarea, Checkbox } from '@mantine/core';
 import { cn } from '@/utils/cn';
 import { Button } from '@/components/ui/Button';
+import { ClientWrapper } from '@/components/ClientWrapper';
 import { z } from 'zod';
 
 export interface FormFieldConfig {
   name: string;
-  type: 'text' | 'email' | 'select' | 'date' | 'textarea' | 'checkbox-group';
+  type:
+    | 'text'
+    | 'email'
+    | 'select'
+    | 'date'
+    | 'date-range'
+    | 'textarea'
+    | 'checkbox-group';
   label: string;
   placeholder?: string;
   required?: boolean;
@@ -56,7 +64,16 @@ export function TanStackDynamicForm<T extends z.ZodType>({
   defaultValues = {},
 }: TanStackDynamicFormProps<T>) {
   const form = useForm({
-    defaultValues: defaultValues as z.infer<T>,
+    defaultValues: {
+      ...defaultValues,
+      // Ensure date-range fields are initialized as arrays with null values
+      ...fields.reduce((acc, field) => {
+        if (field.type === 'date-range') {
+          acc[field.name] = [null, null];
+        }
+        return acc;
+      }, {} as any),
+    } as z.infer<T>,
     validators: {
       onSubmit: schema,
     },
@@ -81,11 +98,30 @@ export function TanStackDynamicForm<T extends z.ZodType>({
             // Get the field schema for individual validation
             const fieldSchema = (schema as any).shape?.[field.name];
             if (fieldSchema) {
-              const validationResult = fieldSchema.safeParse(value);
-              if (!validationResult.success) {
-                hasError = true;
-                errorMessage =
-                  validationResult.error.errors[0]?.message || 'Invalid input';
+              // For date-range fields, ensure we have an array
+              const fieldValue =
+                field.type === 'date-range' && !Array.isArray(value)
+                  ? [null, null]
+                  : value;
+              
+              // For date-range fields, only validate if we have some data
+              if (field.type === 'date-range') {
+                const hasSomeData = Array.isArray(fieldValue) && fieldValue.some(date => date !== null);
+                if (hasSomeData) {
+                  const validationResult = fieldSchema.safeParse(fieldValue);
+                  if (!validationResult.success) {
+                    hasError = true;
+                    errorMessage =
+                      validationResult.error.errors[0]?.message || 'Invalid input';
+                  }
+                }
+              } else {
+                const validationResult = fieldSchema.safeParse(fieldValue);
+                if (!validationResult.success) {
+                  hasError = true;
+                  errorMessage =
+                    validationResult.error.errors[0]?.message || 'Invalid input';
+                }
               }
             }
           }
@@ -122,8 +158,8 @@ export function TanStackDynamicForm<T extends z.ZodType>({
                   value={value ? new Date(value + 'T00:00:00') : null}
                   onChange={(date) =>
                     fieldApi.handleChange(
-                      (date
-                        ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                      (date && typeof date === 'object' && 'getFullYear' in date
+                        ? `${(date as Date).getFullYear()}-${String((date as Date).getMonth() + 1).padStart(2, '0')}-${String((date as Date).getDate()).padStart(2, '0')}`
                         : '') as any
                     )
                   }
@@ -141,6 +177,80 @@ export function TanStackDynamicForm<T extends z.ZodType>({
                     },
                   }}
                 />
+              ) : field.type === 'date-range' ? (
+                <ClientWrapper
+                  fallback={
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        {field.label}
+                        {field.required && (
+                          <span className="text-red-500 ml-1">*</span>
+                        )}
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder={
+                            field.placeholder || 'Select travel dates'
+                          }
+                          className="w-full h-12 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          readOnly
+                        />
+                        {field.icon && (
+                          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                            {field.icon}
+                          </div>
+                        )}
+                      </div>
+                      {errorMessage && (
+                        <p className="text-sm text-red-600">{errorMessage}</p>
+                      )}
+                    </div>
+                  }
+                >
+                  <DatePickerInput
+                    type="range"
+                    label={field.label}
+                    placeholder={field.placeholder || 'Select travel dates'}
+                    value={Array.isArray(value) ? value : [null, null]}
+                    onChange={(dates) => {
+                      // Handle date range selection properly
+                      if (dates && Array.isArray(dates)) {
+                        const [start, end] = dates;
+                        // Allow partial selection during the selection process
+                        if (start) {
+                          if (end) {
+                            // Both dates selected
+                            fieldApi.handleChange([start, end] as any);
+                          } else {
+                            // Only start date selected (user is still selecting)
+                            fieldApi.handleChange([start, null] as any);
+                          }
+                        } else {
+                          // No dates selected
+                          fieldApi.handleChange([] as any);
+                        }
+                      } else {
+                        fieldApi.handleChange([] as any);
+                      }
+                    }}
+                    onBlur={fieldApi.handleBlur}
+                    leftSection={field.icon}
+                    required={field.required}
+                    minDate={new Date()}
+                    allowSingleDateInRange={false}
+                    error={errorMessage}
+                    styles={{
+                      input: {
+                        height: '3rem',
+                        fontSize: '1rem',
+                        '&::placeholder': {
+                          color: '#9ca3af',
+                        },
+                      },
+                    }}
+                  />
+                </ClientWrapper>
               ) : field.type === 'textarea' ? (
                 <Textarea
                   label={field.label}

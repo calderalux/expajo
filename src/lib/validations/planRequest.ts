@@ -33,15 +33,50 @@ export const planRequestSchema = z.object({
       (val) => nigerianStates.includes(val.toLowerCase() as any),
       'Please select a valid Nigerian location'
     ),
-  travel_date: z
-    .string()
-    .min(1, 'Travel date is required')
-    .refine((date) => {
-      const selectedDate = new Date(date);
+  travel_dates: z
+    .array(
+      z.union([
+        z.date(),
+        z.string().transform((str) => new Date(str)),
+        z.null(),
+      ])
+    )
+    .refine((dates) => {
+      // Allow empty array or null values during initial state
+      if (!dates || dates.length === 0) return true;
+      
+      // If we have dates, validate them
+      const [arrival, departure] = dates;
+      if (!arrival) return false;
+      if (!departure) return true; // Allow partial selection
+
+      // Convert to Date objects if they're strings
+      const arrivalDate = arrival instanceof Date ? arrival : new Date(arrival);
+      const departureDate =
+        departure instanceof Date ? departure : new Date(departure);
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      return selectedDate >= today;
-    }, 'Travel date must be in the future'),
+
+      return arrivalDate >= today && departureDate > arrivalDate;
+    }, 'Arrival date must be in the future and departure date must be after arrival date')
+    .refine((dates) => {
+      // Only require exactly 2 dates if we have any dates at all
+      if (!dates || dates.length === 0) return true;
+      return dates.length === 2;
+    }, 'Please select both arrival and departure dates')
+    .transform((dates) => {
+      // Filter out null values and ensure we have exactly 2 dates for final validation
+      const validDates = dates
+        .filter((date) => date !== null)
+        .map((date) => {
+          if (date instanceof Date) return date;
+          if (typeof date === 'string') return new Date(date);
+          return new Date(); // fallback
+        });
+
+      return validDates;
+    }),
   guests: z
     .string()
     .min(1, 'Number of guests is required')
@@ -57,7 +92,14 @@ export type PlanRequestFormData = z.infer<typeof planRequestSchema>;
 // Field configuration for dynamic form
 export interface FormFieldConfig {
   name: keyof PlanRequestFormData;
-  type: 'text' | 'email' | 'select' | 'date' | 'textarea' | 'checkbox-group';
+  type:
+    | 'text'
+    | 'email'
+    | 'select'
+    | 'date'
+    | 'date-range'
+    | 'textarea'
+    | 'checkbox-group';
   label: string;
   placeholder?: string;
   required?: boolean;
@@ -80,10 +122,10 @@ export const planRequestFields: FormFieldConfig[] = [
     })),
   },
   {
-    name: 'travel_date',
-    type: 'date',
-    label: 'Travel Date',
-    placeholder: 'Select your travel date',
+    name: 'travel_dates',
+    type: 'date-range',
+    label: 'Travel Dates',
+    placeholder: 'Select your travel dates',
     required: true,
   },
   {

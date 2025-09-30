@@ -185,7 +185,10 @@ export const PlanFormSection: React.FC = () => {
           formData
             ? {
                 location: formData.location,
-                travel_date: formData.travel_date,
+                travel_date:
+                  formData.travel_dates && formData.travel_dates[0]
+                    ? formData.travel_dates[0].toISOString().split('T')[0]
+                    : '',
                 guests: formData.guests.toString(),
               }
             : undefined
