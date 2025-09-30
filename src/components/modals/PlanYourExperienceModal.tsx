@@ -448,7 +448,10 @@ export const PlanYourExperienceModal: React.FC<
           {(fieldApi) => {
             const hasError = fieldApi.state.meta.errors.length > 0;
             const errorMessage = hasError
-              ? String(fieldApi.state.meta.errors[0])
+              ? typeof fieldApi.state.meta.errors[0] === 'string'
+                ? fieldApi.state.meta.errors[0]
+                : fieldApi.state.meta.errors[0]?.message ||
+                  'Full name is required'
               : '';
 
             return (
@@ -474,7 +477,9 @@ export const PlanYourExperienceModal: React.FC<
           {(fieldApi) => {
             const hasError = fieldApi.state.meta.errors.length > 0;
             const errorMessage = hasError
-              ? String(fieldApi.state.meta.errors[0])
+              ? typeof fieldApi.state.meta.errors[0] === 'string'
+                ? fieldApi.state.meta.errors[0]
+                : fieldApi.state.meta.errors[0]?.message || 'Email is required'
               : '';
 
             return (
@@ -501,7 +506,10 @@ export const PlanYourExperienceModal: React.FC<
           {(fieldApi) => {
             const hasError = fieldApi.state.meta.errors.length > 0;
             const errorMessage = hasError
-              ? String(fieldApi.state.meta.errors[0])
+              ? typeof fieldApi.state.meta.errors[0] === 'string'
+                ? fieldApi.state.meta.errors[0]
+                : fieldApi.state.meta.errors[0]?.message ||
+                  'Phone number is required'
               : '';
 
             return (
@@ -527,7 +535,7 @@ export const PlanYourExperienceModal: React.FC<
                     <Combobox.Target>
                       <button
                         type="button"
-                        className="flex items-center justify-center space-x-2 px-3 py-3 h-12 border border-gray-300 rounded-l-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-w-[90px]"
+                        className="flex items-center justify-center space-x-2 px-3 py-3 h-12 border border-gray-300 rounded-l-lg bg-white focus:outline-none w-[110px] relative z-10"
                         onClick={() => combobox.toggleDropdown()}
                       >
                         <span className="text-2xl leading-none">
@@ -552,18 +560,18 @@ export const PlanYourExperienceModal: React.FC<
                       </button>
                     </Combobox.Target>
 
-                    <Combobox.Dropdown className="border border-gray-200 shadow-lg rounded-lg overflow-hidden">
+                    <Combobox.Dropdown className="border border-gray-200 shadow-lg rounded-lg overflow-hidden w-[110px]">
                       <Combobox.Options className="max-h-60 overflow-y-auto bg-white">
                         {countries.map((country) => (
                           <Combobox.Option
                             key={country.code}
                             value={country.code}
-                            className="flex items-center justify-center space-x-3 px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors duration-150 border-b border-gray-100 last:border-b-0"
+                            className="flex items-center justify-center space-x-2 px-3 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 w-full"
                           >
                             <span className="text-2xl leading-none">
                               {country.flag}
                             </span>
-                            <span className="text-sm font-bold text-gray-800">
+                            <span className="text-sm font-bold text-gray-800 leading-none">
                               {country.dialCode}
                             </span>
                           </Combobox.Option>
@@ -577,7 +585,8 @@ export const PlanYourExperienceModal: React.FC<
                     placeholder="Phone Number"
                     value={phoneNumber}
                     onChange={(e) => {
-                      const value = e.target.value;
+                      // Only allow numbers
+                      const value = e.target.value.replace(/[^0-9]/g, '');
                       setPhoneNumber(value);
                       // Update the form field with the full phone number
                       const fullPhone = `${selectedCountry.dialCode}${value}`;
@@ -586,6 +595,9 @@ export const PlanYourExperienceModal: React.FC<
                     onBlur={fieldApi.handleBlur}
                     error={errorMessage}
                     className="flex-1"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     styles={{
                       input: {
                         height: '3rem',
@@ -594,6 +606,7 @@ export const PlanYourExperienceModal: React.FC<
                         borderBottomLeftRadius: 0,
                         borderLeft: 'none',
                         borderColor: errorMessage ? '#ef4444' : '#d1d5db',
+                        marginLeft: '-1px', // Flush with country selector border
                         '&:focus': {
                           borderColor: errorMessage ? '#ef4444' : '#3b82f6',
                           boxShadow: errorMessage
@@ -613,7 +626,10 @@ export const PlanYourExperienceModal: React.FC<
           {(fieldApi) => {
             const hasError = fieldApi.state.meta.errors.length > 0;
             const errorMessage = hasError
-              ? String(fieldApi.state.meta.errors[0])
+              ? typeof fieldApi.state.meta.errors[0] === 'string'
+                ? fieldApi.state.meta.errors[0]
+                : fieldApi.state.meta.errors[0]?.message ||
+                  'Consent is required'
               : '';
 
             return (

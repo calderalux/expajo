@@ -80,8 +80,8 @@ export const step3Schema = z.object({
     .string()
     .min(1, 'Phone number is required')
     .regex(
-      /^[0-9]{10,11}$/,
-      'Please enter a valid Nigerian phone number (10-11 digits)'
+      /^\+[0-9]{1,4}[0-9]{10,11}$/,
+      'Please enter a valid phone number with country code'
     ),
   consent: z
     .boolean()
