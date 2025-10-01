@@ -82,30 +82,28 @@ export const HeroSection: React.FC = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="bg-gray-50 rounded-2xl p-6"
           >
-            {/* Single Row: All elements on one line */}
-            <div className="flex items-center justify-between gap-6">
-              {/* Left side: Category Filters */}
-              <div className="flex-1">
-                <CategoryFilter
-                  categories={categories}
-                  activeCategory={activeCategory}
-                  onCategoryChange={setActiveCategory}
-                  className="justify-start flex-nowrap overflow-x-auto"
-                />
+            {/* Single Row: All elements evenly spaced on one line */}
+            <div className="flex items-center justify-between">
+              {/* Category Filters */}
+              <CategoryFilter
+                categories={categories}
+                activeCategory={activeCategory}
+                onCategoryChange={setActiveCategory}
+                className="justify-start flex-nowrap"
+              />
+
+              {/* Results Count */}
+              <div className="text-sm text-gray-600 font-medium whitespace-nowrap mx-8">
+                6 experiences found
               </div>
 
-              {/* Right side: Results Count and Sort */}
-              <div className="flex items-center gap-6 flex-shrink-0">
-                <div className="text-sm text-gray-600 font-medium whitespace-nowrap">
-                  6 experiences found
-                </div>
-                <Select
-                  options={sortOptions}
-                  value={sortBy}
-                  onChange={setSortBy}
-                  className="w-44"
-                />
-              </div>
+              {/* Sort Dropdown */}
+              <Select
+                options={sortOptions}
+                value={sortBy}
+                onChange={setSortBy}
+                className="w-40"
+              />
             </div>
           </motion.div>
         </div>
