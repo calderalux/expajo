@@ -80,10 +80,10 @@ export const HeroSection: React.FC = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="space-y-8"
+            className="bg-gray-50 rounded-2xl p-6"
           >
-            {/* Category Filters */}
-            <div className="bg-gray-50 rounded-2xl p-6">
+            {/* Top Row: Category Filters */}
+            <div className="mb-6">
               <CategoryFilter
                 categories={categories}
                 activeCategory={activeCategory}
@@ -92,7 +92,7 @@ export const HeroSection: React.FC = () => {
               />
             </div>
 
-            {/* Results Count and Sort */}
+            {/* Bottom Row: Results Count and Sort */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="text-sm text-gray-600 font-medium">
                 6 experiences found
