@@ -82,23 +82,23 @@ export const HeroSection: React.FC = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="bg-gray-50 rounded-2xl p-6"
           >
-            {/* Top Row: Category Filters */}
-            <div className="mb-6">
-              <CategoryFilter
-                categories={categories}
-                activeCategory={activeCategory}
-                onCategoryChange={setActiveCategory}
-                className="justify-center flex-wrap"
-              />
-            </div>
-
-            {/* Bottom Row: Results Count and Sort */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="text-sm text-gray-600 font-medium">
-                6 experiences found
+            {/* Single Row: All elements on one line */}
+            <div className="flex items-center justify-between gap-6">
+              {/* Left side: Category Filters */}
+              <div className="flex-1">
+                <CategoryFilter
+                  categories={categories}
+                  activeCategory={activeCategory}
+                  onCategoryChange={setActiveCategory}
+                  className="justify-start flex-nowrap overflow-x-auto"
+                />
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-600">Sort by:</span>
+
+              {/* Right side: Results Count and Sort */}
+              <div className="flex items-center gap-6 flex-shrink-0">
+                <div className="text-sm text-gray-600 font-medium whitespace-nowrap">
+                  6 experiences found
+                </div>
                 <Select
                   options={sortOptions}
                   value={sortBy}
