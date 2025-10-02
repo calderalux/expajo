@@ -30,8 +30,8 @@ export const DestinationDetailModal: React.FC<DestinationDetailModalProps> = ({
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: destination.title,
-        text: destination.description,
+        title: destination.name,
+        text: destination.description || '',
         url: window.location.href,
       });
     } else {
@@ -51,7 +51,6 @@ export const DestinationDetailModal: React.FC<DestinationDetailModalProps> = ({
           isOpen={isOpen}
           onClose={onClose}
           size="xl"
-          className="max-w-4xl"
         >
           <div className="relative">
             {/* Close Button */}
@@ -65,17 +64,17 @@ export const DestinationDetailModal: React.FC<DestinationDetailModalProps> = ({
             {/* Image Gallery */}
             <div className="relative h-80 w-full mb-6">
               <Image
-                src={destination.image_urls[selectedImageIndex] || '/placeholder-destination.jpg'}
-                alt={destination.title}
+                src={destination.image_gallery?.[selectedImageIndex] || destination.image_cover_url || '/placeholder-destination.jpg'}
+                alt={destination.name}
                 fill
                 className="object-cover rounded-t-card"
                 sizes="(max-width: 768px) 100vw, 80vw"
               />
               
               {/* Image Navigation */}
-              {destination.image_urls.length > 1 && (
+              {destination.image_gallery && destination.image_gallery.length > 1 && (
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                  {destination.image_urls.map((_, index) => (
+                  {destination.image_gallery.map((_: any, index: number) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImageIndex(index)}
@@ -112,7 +111,7 @@ export const DestinationDetailModal: React.FC<DestinationDetailModalProps> = ({
               </div>
 
               {/* Featured Badge */}
-              {destination.is_featured && (
+              {destination.featured && (
                 <div className="absolute top-4 left-20">
                   <span className="px-3 py-1 bg-primary text-white text-xs font-semibold rounded-full">
                     Featured Destination
@@ -127,11 +126,11 @@ export const DestinationDetailModal: React.FC<DestinationDetailModalProps> = ({
               <div className="mb-6">
                 <div className="flex items-center text-sm text-gray-500 mb-2">
                   <MapPin size={16} className="mr-1" />
-                  <span>{destination.location}, {destination.country}</span>
+                  <span>{destination.region}, {destination.country}</span>
                 </div>
                 
                 <h2 className="text-3xl font-bold font-playfair text-gray-900 mb-4">
-                  {destination.title}
+                  {destination.name}
                 </h2>
               </div>
 
@@ -166,7 +165,7 @@ export const DestinationDetailModal: React.FC<DestinationDetailModalProps> = ({
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">Highlights</h3>
                   <div className="space-y-2">
-                    {destination.highlights.map((highlight, index) => (
+                    {destination.highlights?.map((highlight, index) => (
                       <div key={index} className="flex items-center text-sm text-gray-600">
                         <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />
                         <span>{highlight}</span>

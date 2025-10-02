@@ -60,7 +60,6 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
           isOpen={isOpen}
           onClose={onClose}
           size="xl"
-          className="max-w-4xl"
         >
           <div className="relative">
             {/* Close Button */}
@@ -176,7 +175,7 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">What's Included</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3">What&apos;s Included</h3>
                   <div className="space-y-2">
                     {experience.features.map((feature, index) => (
                       <div key={index} className="flex items-center text-sm text-gray-600">

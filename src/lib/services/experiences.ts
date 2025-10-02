@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/lib/supabase';
+import { CacheService, CacheKeys, CacheTags } from './cache';
 
 type Experience = Database['public']['Tables']['experiences']['Row'];
 type ExperienceInsert = Database['public']['Tables']['experiences']['Insert'];
@@ -29,80 +30,113 @@ export class ExperienceService {
     sort?: ExperienceSortOptions,
     limit?: number
   ) {
-    let query = supabase
-      .from('experiences')
-      .select('*')
-      .eq('is_active', true);
+    const cacheKey = CacheKeys.experiences.all(filters, sort, limit);
+    
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        let query = supabase
+          .from('experiences')
+          .select('*')
+          .eq('is_active', true);
 
-    // Apply filters
-    if (filters) {
-      if (filters.category) {
-        query = query.eq('category', filters.category);
-      }
-      if (filters.location) {
-        query = query.ilike('location', `%${filters.location}%`);
-      }
-      if (filters.minPrice !== undefined) {
-        query = query.gte('price_per_person', filters.minPrice);
-      }
-      if (filters.maxPrice !== undefined) {
-        query = query.lte('price_per_person', filters.maxPrice);
-      }
-      if (filters.minRating !== undefined) {
-        query = query.gte('rating', filters.minRating);
-      }
-      if (filters.isFeatured !== undefined) {
-        query = query.eq('is_featured', filters.isFeatured);
-      }
-    }
+        // Apply filters
+        if (filters) {
+          if (filters.category) {
+            query = query.eq('category', filters.category);
+          }
+          if (filters.location) {
+            query = query.ilike('location', `%${filters.location}%`);
+          }
+          if (filters.minPrice !== undefined) {
+            query = query.gte('price_per_person', filters.minPrice);
+          }
+          if (filters.maxPrice !== undefined) {
+            query = query.lte('price_per_person', filters.maxPrice);
+          }
+          if (filters.minRating !== undefined) {
+            query = query.gte('rating', filters.minRating);
+          }
+          if (filters.isFeatured !== undefined) {
+            query = query.eq('is_featured', filters.isFeatured);
+          }
+        }
 
-    // Apply sorting
-    if (sort) {
-      query = query.order(sort.field, { ascending: sort.order === 'asc' });
-    } else {
-      query = query.order('created_at', { ascending: false });
-    }
+        // Apply sorting
+        if (sort) {
+          query = query.order(sort.field, { ascending: sort.order === 'asc' });
+        } else {
+          query = query.order('created_at', { ascending: false });
+        }
 
-    // Apply limit
-    if (limit) {
-      query = query.limit(limit);
-    }
+        // Apply limit
+        if (limit) {
+          query = query.limit(limit);
+        }
 
-    const { data, error } = await query;
+        const { data, error } = await query;
 
-    if (error) {
-      throw new Error(`Failed to fetch experiences: ${error.message}`);
-    }
+        if (error) {
+          throw new Error(`Failed to fetch experiences: ${error.message}`);
+        }
 
-    return { data, error: null };
+        return { data, error: null };
+      },
+      {
+        ttl: 1800, // 30 minutes
+        tags: [CacheTags.experiences],
+      }
+    );
   }
 
   /**
    * Get a single experience by ID
    */
   static async getExperienceById(id: string) {
-    const { data, error } = await supabase
-      .from('experiences')
-      .select('*')
-      .eq('id', id)
-      .eq('is_active', true)
-      .single();
+    const cacheKey = CacheKeys.experiences.byId(id);
+    
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const { data, error } = await supabase
+          .from('experiences')
+          .select('*')
+          .eq('id', id)
+          .eq('is_active', true)
+          .single();
 
-    if (error) {
-      throw new Error(`Failed to fetch experience: ${error.message}`);
-    }
+        if (error) {
+          throw new Error(`Failed to fetch experience: ${error.message}`);
+        }
 
-    return { data, error: null };
+        return { data, error: null };
+      },
+      {
+        ttl: 3600, // 1 hour
+        tags: [CacheTags.experiences],
+      }
+    );
   }
 
   /**
    * Get featured experiences
    */
   static async getFeaturedExperiences(limit: number = 6) {
-    return this.getExperiences(
-      { isFeatured: true },
-      { field: 'rating', order: 'desc' },
-      limit
+    const cacheKey = CacheKeys.experiences.featured(limit);
+    
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        return this.getExperiences(
+          { isFeatured: true },
+          { field: 'rating', order: 'desc' },
+          limit
+        );
+      },
+      {
+        ttl: 1800, // 30 minutes
+        tags: [CacheTags.experiences],
+      }
     );
   }
 
@@ -110,10 +144,21 @@ export class ExperienceService {
    * Get experiences by category
    */
   static async getExperiencesByCategory(category: string, limit?: number) {
-    return this.getExperiences(
-      { category },
-      { field: 'rating', order: 'desc' },
-      limit
+    const cacheKey = CacheKeys.experiences.byCategory(category, limit);
+    
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        return this.getExperiences(
+          { category },
+          { field: 'rating', order: 'desc' },
+          limit
+        );
+      },
+      {
+        ttl: 1800, // 30 minutes
+        tags: [CacheTags.experiences],
+      }
     );
   }
 
@@ -121,38 +166,60 @@ export class ExperienceService {
    * Search experiences by title or description
    */
   static async searchExperiences(searchTerm: string, limit?: number) {
-    const { data, error } = await supabase
-      .from('experiences')
-      .select('*')
-      .eq('is_active', true)
-      .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
-      .order('rating', { ascending: false })
-      .limit(limit || 20);
+    const cacheKey = CacheKeys.experiences.search(searchTerm, limit);
+    
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const { data, error } = await supabase
+          .from('experiences')
+          .select('*')
+          .eq('is_active', true)
+          .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
+          .order('rating', { ascending: false })
+          .limit(limit || 20);
 
-    if (error) {
-      throw new Error(`Failed to search experiences: ${error.message}`);
-    }
+        if (error) {
+          throw new Error(`Failed to search experiences: ${error.message}`);
+        }
 
-    return { data, error: null };
+        return { data, error: null };
+      },
+      {
+        ttl: 900, // 15 minutes for search results
+        tags: [CacheTags.experiences],
+      }
+    );
   }
 
   /**
    * Get experience categories
    */
   static async getExperienceCategories() {
-    const { data, error } = await supabase
-      .from('experiences')
-      .select('category')
-      .eq('is_active', true)
-      .not('category', 'is', null);
+    const cacheKey = CacheKeys.experiences.categories();
+    
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const { data, error } = await supabase
+          .from('experiences')
+          .select('category')
+          .eq('is_active', true)
+          .not('category', 'is', null);
 
-    if (error) {
-      throw new Error(`Failed to fetch categories: ${error.message}`);
-    }
+        if (error) {
+          throw new Error(`Failed to fetch categories: ${error.message}`);
+        }
 
-    // Get unique categories
-    const categories = [...new Set(data.map(item => item.category))];
-    return { data: categories, error: null };
+        // Get unique categories
+        const categories = Array.from(new Set(data.map(item => item.category)));
+        return { data: categories, error: null };
+      },
+      {
+        ttl: 3600, // 1 hour
+        tags: [CacheTags.experiences],
+      }
+    );
   }
 
   /**
@@ -168,6 +235,9 @@ export class ExperienceService {
     if (error) {
       throw new Error(`Failed to create experience: ${error.message}`);
     }
+
+    // Invalidate experience cache
+    await CacheService.invalidateByTags([CacheTags.experiences]);
 
     return { data, error: null };
   }
@@ -187,6 +257,9 @@ export class ExperienceService {
       throw new Error(`Failed to update experience: ${error.message}`);
     }
 
+    // Invalidate experience cache
+    await CacheService.invalidateByTags([CacheTags.experiences]);
+
     return { data, error: null };
   }
 
@@ -204,6 +277,9 @@ export class ExperienceService {
     if (error) {
       throw new Error(`Failed to delete experience: ${error.message}`);
     }
+
+    // Invalidate experience cache
+    await CacheService.invalidateByTags([CacheTags.experiences]);
 
     return { data, error: null };
   }

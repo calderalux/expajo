@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Layout } from '@/components/layout/Layout';
 import { ExperienceCard } from '@/components/ui/ExperienceCard';
@@ -77,7 +77,7 @@ function ExperienceListContent() {
   };
 
   // Fetch experiences
-  const fetchExperiences = async (page: number = 1, reset: boolean = false) => {
+  const fetchExperiences = useCallback(async (page: number = 1, reset: boolean = false) => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
@@ -107,7 +107,7 @@ function ExperienceListContent() {
         error: err.message || 'Failed to fetch experiences',
       }));
     }
-  };
+  }, [filters, sortBy]);
 
   // Load more experiences
   const loadMore = () => {
@@ -149,7 +149,7 @@ function ExperienceListContent() {
   // Initial load
   useEffect(() => {
     fetchExperiences(1, true);
-  }, []);
+  }, [fetchExperiences]);
 
   // Update URL when filters change
   useEffect(() => {

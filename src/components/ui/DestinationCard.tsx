@@ -27,8 +27,8 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
       {/* Image Section */}
       <div className="relative h-64 w-full">
         <Image
-          src={destination.image_urls[0] || '/placeholder-destination.jpg'}
-          alt={destination.title}
+          src={destination.image_gallery?.[0] || destination.image_cover_url || '/placeholder-destination.jpg'}
+          alt={destination.name}
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -51,7 +51,7 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
         </div>
 
         {/* Featured Badge */}
-        {destination.is_featured && (
+        {destination.featured && (
           <div className="absolute top-4 left-4">
             <span className="px-3 py-1 bg-primary text-white text-xs font-semibold rounded-full">
               Featured
@@ -65,12 +65,12 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
         {/* Location */}
         <div className="flex items-center text-sm text-gray-500 mb-2">
           <MapPin size={16} className="mr-1" />
-          <span>{destination.location}, {destination.country}</span>
+          <span>{destination.region}, {destination.country}</span>
         </div>
 
         {/* Title */}
         <h3 className="text-xl font-semibold font-playfair text-gray-900 mb-3 line-clamp-2">
-          {destination.title}
+          {destination.name}
         </h3>
 
         {/* Description */}
@@ -80,7 +80,7 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
 
         {/* Highlights */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {destination.highlights.slice(0, 3).map((highlight, index) => (
+          {destination.highlights?.slice(0, 3).map((highlight, index) => (
             <span
               key={index}
               className="px-3 py-1 text-xs text-gray-600 bg-gray-100 rounded-full border border-gray-200"
@@ -88,7 +88,7 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
               {highlight}
             </span>
           ))}
-          {destination.highlights.length > 3 && (
+          {destination.highlights && destination.highlights.length > 3 && (
             <span className="px-3 py-1 text-xs text-gray-600 bg-gray-100 rounded-full border border-gray-200">
               +{destination.highlights.length - 3} more
             </span>

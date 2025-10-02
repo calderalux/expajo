@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Layout } from '@/components/layout/Layout';
 import { DestinationCard } from '@/components/ui/DestinationCard';
@@ -54,8 +54,8 @@ function DestinationListContent() {
 
   const [filters, setFilters] = useState<DestinationFilters>({
     country: searchParams.get('country') || undefined,
-    location: searchParams.get('location') || undefined,
-    isFeatured: searchParams.get('featured') === 'true' ? true : undefined,
+    region: searchParams.get('location') || undefined,
+    featured: searchParams.get('featured') === 'true' ? true : undefined,
   });
 
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
@@ -67,14 +67,20 @@ function DestinationListContent() {
   // Parse sort option
   const getSortOptions = (sortValue: string) => {
     const [field, order] = sortValue.split('-');
+    // Map frontend sort values to backend field names
+    const fieldMap: Record<string, 'created_at' | 'name' | 'region' | 'avg_rating' | 'package_count'> = {
+      'title': 'name',
+      'location': 'region',
+      'created': 'created_at',
+    };
     return {
-      field: field as 'created_at' | 'title' | 'location',
+      field: fieldMap[field] || 'name',
       order: order as 'asc' | 'desc',
     };
   };
 
   // Fetch destinations
-  const fetchDestinations = async (page: number = 1, reset: boolean = false) => {
+  const fetchDestinations = useCallback(async (page: number = 1, reset: boolean = false) => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
@@ -104,7 +110,7 @@ function DestinationListContent() {
         error: err.message || 'Failed to fetch destinations',
       }));
     }
-  };
+  }, [filters, sortBy]);
 
   // Load more destinations
   const loadMore = () => {
@@ -116,7 +122,7 @@ function DestinationListContent() {
   // Handle search
   const handleSearch = () => {
     if (searchTerm.trim()) {
-      setFilters(prev => ({ ...prev, location: searchTerm.trim() }));
+      setFilters(prev => ({ ...prev, region: searchTerm.trim() }));
     }
     fetchDestinations(1, true);
   };
@@ -146,14 +152,14 @@ function DestinationListContent() {
   // Initial load
   useEffect(() => {
     fetchDestinations(1, true);
-  }, []);
+  }, [fetchDestinations]);
 
   // Update URL when filters change
   useEffect(() => {
     const params = new URLSearchParams();
     if (filters.country) params.set('country', filters.country);
-    if (filters.location) params.set('location', filters.location);
-    if (filters.isFeatured) params.set('featured', 'true');
+    if (filters.region) params.set('location', filters.region);
+    if (filters.featured) params.set('featured', 'true');
     if (searchTerm) params.set('search', searchTerm);
     if (sortBy) params.set('sort', sortBy);
 

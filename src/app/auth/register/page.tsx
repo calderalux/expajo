@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RegisterForm } from '@/components/forms/RegisterForm';
 import { type RegisterFormData } from '@/lib/validations';
 import { useSupabase } from '@/lib/providers';
@@ -9,10 +9,20 @@ import { useRouter } from 'next/navigation';
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = useSupabase();
+  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+  const supabase = useSupabase();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleSubmit = async (data: RegisterFormData) => {
+    if (!isClient) {
+      setError('Please wait for the page to load completely.');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
