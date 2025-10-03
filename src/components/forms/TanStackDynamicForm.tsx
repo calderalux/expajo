@@ -252,6 +252,7 @@ export function TanStackDynamicForm<T extends z.ZodType>({
                     minDate={new Date()}
                     allowSingleDateInRange={false}
                     error={errorMessage}
+                    valueFormat="MMM. D, YYYY"
                     styles={{
                       input: {
                         height: '3rem',
