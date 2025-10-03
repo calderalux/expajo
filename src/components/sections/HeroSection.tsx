@@ -82,28 +82,33 @@ export const HeroSection: React.FC = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="bg-gray-50 rounded-2xl p-6"
           >
-            {/* Single Row: All elements evenly spaced on one line */}
-            <div className="flex items-center justify-between">
-              {/* Category Filters */}
-              <CategoryFilter
-                categories={categories}
-                activeCategory={activeCategory}
-                onCategoryChange={setActiveCategory}
-                className="justify-start flex-nowrap"
-              />
-
-              {/* Results Count */}
-              <div className="text-sm text-gray-600 font-medium whitespace-nowrap mx-8">
-                6 experiences found
+            {/* Two-row layout: Category filters on top, results/sort on bottom */}
+            <div className="space-y-6">
+              {/* Top Row: Category Filters with horizontal scroll */}
+              <div className="w-full">
+                <CategoryFilter
+                  categories={categories}
+                  activeCategory={activeCategory}
+                  onCategoryChange={setActiveCategory}
+                  className="justify-start flex-nowrap overflow-x-auto scrollbar-hide"
+                />
               </div>
 
-              {/* Sort Dropdown */}
-              <Select
-                options={sortOptions}
-                value={sortBy}
-                onChange={setSortBy}
-                className="w-40"
-              />
+              {/* Bottom Row: Results count and Sort dropdown evenly spaced */}
+              <div className="flex items-center justify-between">
+                {/* Results Count */}
+                <div className="text-sm text-gray-600 font-medium whitespace-nowrap">
+                  6 experiences found
+                </div>
+
+                {/* Sort Dropdown */}
+                <Select
+                  options={sortOptions}
+                  value={sortBy}
+                  onChange={setSortBy}
+                  className="w-40"
+                />
+              </div>
             </div>
           </motion.div>
         </div>
