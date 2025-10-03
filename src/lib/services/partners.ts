@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import { Database, PartnerStatus } from '@/lib/supabase';
+import { Database } from '@/types/database';
+import { PartnerStatus } from '@/lib/supabase';
 
 type Partner = Database['public']['Tables']['partners']['Row'];
 type PartnerInsert = Database['public']['Tables']['partners']['Insert'];
@@ -171,7 +172,7 @@ export class PartnerService {
     }
 
     // Get unique types
-    const types = Array.from(new Set(data.map(item => item.type)));
+    const types = Array.from(new Set((data as any).map((item: any) => item.type)));
     return { data: types, error: null };
   }
 
@@ -179,7 +180,7 @@ export class PartnerService {
    * Create a new partner
    */
   static async createPartner(partner: PartnerInsert) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('partners')
       .insert(partner)
       .select()
@@ -196,7 +197,7 @@ export class PartnerService {
    * Update a partner
    */
   static async updatePartner(id: string, updates: PartnerUpdate) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('partners')
       .update(updates)
       .eq('id', id)
@@ -214,7 +215,7 @@ export class PartnerService {
    * Approve a partner
    */
   static async approvePartner(id: string) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('partners')
       .update({ status: PartnerStatus.APPROVED })
       .eq('id', id)
@@ -232,7 +233,7 @@ export class PartnerService {
    * Suspend a partner
    */
   static async suspendPartner(id: string, reason?: string) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('partners')
       .update({ status: PartnerStatus.SUSPENDED })
       .eq('id', id)
@@ -250,7 +251,7 @@ export class PartnerService {
    * Reject a partner
    */
   static async rejectPartner(id: string, reason?: string) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('partners')
       .update({ status: PartnerStatus.REJECTED })
       .eq('id', id)
@@ -285,7 +286,7 @@ export class PartnerService {
 
     if (!reviews || reviews.length === 0) {
       // No reviews, set to default rating
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('partners')
         .update({ rating: 0 })
         .eq('id', partnerId)
@@ -299,9 +300,9 @@ export class PartnerService {
       return { data, error: null };
     }
 
-    const avgRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+    const avgRating = (reviews as any).reduce((sum: any, review: any) => sum + review.rating, 0) / (reviews as any).length;
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('partners')
       .update({ rating: avgRating })
       .eq('id', partnerId)
@@ -328,13 +329,13 @@ export class PartnerService {
     }
 
     const stats = {
-      total_partners: data?.length || 0,
-      approved_partners: data?.filter(p => p.status === PartnerStatus.APPROVED).length || 0,
-      pending_partners: data?.filter(p => p.status === PartnerStatus.PENDING).length || 0,
-      suspended_partners: data?.filter(p => p.status === PartnerStatus.SUSPENDED).length || 0,
-      rejected_partners: data?.filter(p => p.status === PartnerStatus.REJECTED).length || 0,
-      average_rating: data?.reduce((sum, p) => sum + (p.rating || 0), 0) / (data?.length || 1) || 0,
-      top_rated_count: data?.filter(p => (p.rating || 0) >= 4.5).length || 0
+      total_partners: (data as any)?.length || 0,
+      approved_partners: (data as any)?.filter((p: any) => p.status === PartnerStatus.APPROVED).length || 0,
+      pending_partners: (data as any)?.filter((p: any) => p.status === PartnerStatus.PENDING).length || 0,
+      suspended_partners: (data as any)?.filter((p: any) => p.status === PartnerStatus.SUSPENDED).length || 0,
+      rejected_partners: (data as any)?.filter((p: any) => p.status === PartnerStatus.REJECTED).length || 0,
+      average_rating: (data as any)?.reduce((sum: any, p: any) => sum + (p.rating || 0), 0) / ((data as any)?.length || 1) || 0,
+      top_rated_count: (data as any)?.filter((p: any) => (p.rating || 0) >= 4.5).length || 0
     };
 
     return { data: stats, error: null };

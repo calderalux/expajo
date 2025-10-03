@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create user profile
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await (supabase as any)
       .from('profiles')
       .insert({
         email,
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
 
     // Assign role if provided
     if (role && profile) {
-      const { error: roleError } = await supabase
+      const { error: roleError } = await (supabase as any)
         .from('app_roles')
         .insert({
           user_id: profile.id,
@@ -190,7 +190,7 @@ export async function PUT(req: NextRequest) {
     }
 
     // Update profile
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await (supabase as any)
       .from('profiles')
       .update({
         full_name,
@@ -207,7 +207,7 @@ export async function PUT(req: NextRequest) {
 
     // Update role if provided
     if (role) {
-      const { error: roleError } = await supabase
+      const { error: roleError } = await (supabase as any)
         .from('app_roles')
         .upsert({
           user_id: id,
@@ -260,7 +260,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Soft delete by updating is_admin to false
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('profiles')
       .update({ is_admin: false, admin_level: 0 })
       .eq('id', id);
@@ -270,7 +270,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Deactivate roles
-    await supabase
+    await (supabase as any)
       .from('app_roles')
       .update({ is_active: false })
       .eq('user_id', id);

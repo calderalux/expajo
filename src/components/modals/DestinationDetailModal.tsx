@@ -165,7 +165,7 @@ export const DestinationDetailModal: React.FC<DestinationDetailModalProps> = ({
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">Highlights</h3>
                   <div className="space-y-2">
-                    {destination.highlights?.map((highlight, index) => (
+                     {destination.highlights?.map((highlight: any, index: number) => (
                       <div key={index} className="flex items-center text-sm text-gray-600">
                         <CheckCircle size={16} className="text-green-500 mr-2 flex-shrink-0" />
                         <span>{highlight}</span>

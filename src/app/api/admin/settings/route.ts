@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Group settings by category
-    const groupedSettings = data?.reduce((acc, setting) => {
+    const groupedSettings = (data as any)?.reduce((acc: any, setting: any) => {
       if (!acc[setting.category]) {
         acc[setting.category] = [];
       }
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { data: setting, error } = await supabase
+    const { data: setting, error } = await (supabase as any)
       .from('admin_settings')
       .upsert({
         key,

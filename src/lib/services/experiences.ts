@@ -1,5 +1,5 @@
-import { supabase } from '@/lib/supabase';
-import { Database } from '@/lib/supabase';
+import { supabase, createServerClient } from '@/lib/supabase';
+import { Database } from '@/types/database';
 import { CacheService, CacheKeys, CacheTags } from './cache';
 
 type Experience = Database['public']['Tables']['experiences']['Row'];
@@ -35,7 +35,11 @@ export class ExperienceService {
     return CacheService.getOrSet(
       cacheKey,
       async () => {
-        let query = supabase
+        // Use service role client for public queries to bypass RLS
+        // This prevents circular dependency issues with RLS policies
+        const serverClient = createServerClient();
+        
+        let query = serverClient
           .from('experiences')
           .select('*')
           .eq('is_active', true);
@@ -84,6 +88,79 @@ export class ExperienceService {
       },
       {
         ttl: 1800, // 30 minutes
+        tags: [CacheTags.experiences],
+      }
+    );
+  }
+
+  /**
+   * Get all experiences for admin operations (includes inactive experiences)
+   */
+  static async getExperiencesForAdmin(
+    filters?: ExperienceFilters,
+    sort?: ExperienceSortOptions,
+    limit?: number
+  ) {
+    const cacheKey = CacheKeys.experiences.all({ ...filters, admin: true }, sort, limit);
+    
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        // Use service role client to bypass RLS for admin queries
+        const serverClient = createServerClient();
+        
+        let query = serverClient
+          .from('experiences')
+          .select('*');
+          // Note: No .eq('is_active', true) for admin operations
+
+        // Apply filters
+        if (filters) {
+          if (filters.category) {
+            query = query.eq('category', filters.category);
+          }
+          if (filters.location) {
+            query = query.ilike('location', `%${filters.location}%`);
+          }
+          if (filters.minPrice !== undefined) {
+            query = query.gte('price_per_person', filters.minPrice);
+          }
+          if (filters.maxPrice !== undefined) {
+            query = query.lte('price_per_person', filters.maxPrice);
+          }
+          if (filters.minRating !== undefined) {
+            query = query.gte('rating', filters.minRating);
+          }
+          if (filters.isActive !== undefined) {
+            query = query.eq('is_active', filters.isActive);
+          }
+          if (filters.isFeatured !== undefined) {
+            query = query.eq('is_featured', filters.isFeatured);
+          }
+        }
+
+        // Apply sorting
+        if (sort) {
+          query = query.order(sort.field, { ascending: sort.order === 'asc' });
+        } else {
+          query = query.order('created_at', { ascending: false });
+        }
+
+        // Apply limit
+        if (limit) {
+          query = query.limit(limit);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          throw new Error(`Failed to fetch experiences: ${error.message}`);
+        }
+
+        return { data, error: null };
+      },
+      {
+        ttl: 300, // 5 minutes for admin queries (shorter cache)
         tags: [CacheTags.experiences],
       }
     );
@@ -212,7 +289,7 @@ export class ExperienceService {
         }
 
         // Get unique categories
-        const categories = Array.from(new Set(data.map(item => item.category)));
+        const categories = Array.from(new Set(data.map((item: any) => item.category)));
         return { data: categories, error: null };
       },
       {
@@ -223,10 +300,10 @@ export class ExperienceService {
   }
 
   /**
-   * Create a new experience
+   * Create a new experience (admin only)
    */
   static async createExperience(experience: ExperienceInsert) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('experiences')
       .insert(experience)
       .select()
@@ -243,10 +320,10 @@ export class ExperienceService {
   }
 
   /**
-   * Update an experience
+   * Update an experience (admin/staff only)
    */
   static async updateExperience(id: string, updates: ExperienceUpdate) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('experiences')
       .update(updates)
       .eq('id', id)
@@ -264,10 +341,31 @@ export class ExperienceService {
   }
 
   /**
-   * Delete an experience (soft delete by setting is_active to false)
+   * Delete an experience (super admin only - hard delete)
    */
   static async deleteExperience(id: string) {
     const { data, error } = await supabase
+      .from('experiences')
+      .delete()
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to delete experience: ${error.message}`);
+    }
+
+    // Invalidate experience cache
+    await CacheService.invalidateByTags([CacheTags.experiences]);
+
+    return { data, error: null };
+  }
+
+  /**
+   * Soft delete an experience by setting is_active to false (admin/staff)
+   */
+  static async deactivateExperience(id: string) {
+    const { data, error } = await (supabase as any)
       .from('experiences')
       .update({ is_active: false })
       .eq('id', id)
@@ -275,7 +373,28 @@ export class ExperienceService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to delete experience: ${error.message}`);
+      throw new Error(`Failed to deactivate experience: ${error.message}`);
+    }
+
+    // Invalidate experience cache
+    await CacheService.invalidateByTags([CacheTags.experiences]);
+
+    return { data, error: null };
+  }
+
+  /**
+   * Reactivate an experience by setting is_active to true (admin/staff)
+   */
+  static async reactivateExperience(id: string) {
+    const { data, error } = await (supabase as any)
+      .from('experiences')
+      .update({ is_active: true })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to reactivate experience: ${error.message}`);
     }
 
     // Invalidate experience cache

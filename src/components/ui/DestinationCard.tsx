@@ -1,8 +1,9 @@
 import React from 'react';
-import Image from 'next/image';
 import { MapPin, Globe, Calendar, Thermometer, Heart, Share2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { SafeImage } from '@/components/ui/SafeImage';
 import { cn } from '@/utils/cn';
+import { getDestinationImageUrl } from '@/utils/image';
 import { Destination } from '@/lib/services/destinations';
 
 interface DestinationCardProps {
@@ -26,12 +27,17 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
     <div className={cn('bg-white rounded-card shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300', className)}>
       {/* Image Section */}
       <div className="relative h-64 w-full">
-        <Image
-          src={destination.image_gallery?.[0] || destination.image_cover_url || '/placeholder-destination.jpg'}
+        <SafeImage
+          src={getDestinationImageUrl(destination)}
           alt={destination.name}
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          onError={(e) => {
+            // Fallback to placeholder if image fails to load
+            const target = e.target as HTMLImageElement;
+            target.src = '/placeholder-destination.svg';
+          }}
         />
         
         {/* Action Buttons */}
@@ -80,7 +86,7 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({
 
         {/* Highlights */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {destination.highlights?.slice(0, 3).map((highlight, index) => (
+           {destination.highlights?.slice(0, 3).map((highlight: any, index: number) => (
             <span
               key={index}
               className="px-3 py-1 text-xs text-gray-600 bg-gray-100 rounded-full border border-gray-200"

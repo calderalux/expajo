@@ -43,7 +43,7 @@ export class AuthService {
 
       // Store OTP in database
       const serverClient = createServerClient();
-      const { error: otpError } = await serverClient
+      const { error: otpError } = await (serverClient as any)
         .from('otp_codes')
         .insert({
           email,
@@ -148,7 +148,7 @@ export class AuthService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const serverClient = createServerClient();
-      const { data: otpData, error } = await serverClient
+      const { data: otpData, error } = await (serverClient as any)
         .from('otp_codes')
         .select('*')
         .eq('email', email)
@@ -174,7 +174,7 @@ export class AuthService {
       }
 
       // Mark OTP as used
-      await serverClient
+      await (serverClient as any)
         .from('otp_codes')
         .update({ 
           is_used: true,
@@ -198,7 +198,7 @@ export class AuthService {
   static async isAdminEmail(email: string): Promise<boolean> {
     try {
       const serverClient = createServerClient();
-      const { data, error } = await serverClient
+      const { data, error } = await (serverClient as any)
         .from('profiles')
         .select('is_admin')
         .eq('email', email)
@@ -220,7 +220,7 @@ export class AuthService {
       const serverClient = createServerClient();
       
       // Try to get existing profile
-      const { data: existingProfile, error: fetchError } = await serverClient
+      const { data: existingProfile, error: fetchError } = await (serverClient as any)
         .from('profiles')
         .select('*')
         .eq('email', email)
@@ -231,7 +231,7 @@ export class AuthService {
       }
 
       // Create new profile if doesn't exist
-      const { data: newProfile, error: createError } = await serverClient
+      const { data: newProfile, error: createError } = await (serverClient as any)
         .from('profiles')
         .insert({
           email,
@@ -247,7 +247,7 @@ export class AuthService {
       }
 
       // Create admin role assignment
-      await serverClient
+      await (serverClient as any)
         .from('app_roles')
         .insert({
           user_id: newProfile.id,
@@ -271,7 +271,7 @@ export class AuthService {
       const sessionToken = this.generateSessionToken();
       const expiresAt = new Date(Date.now() + this.SESSION_TIMEOUT_HOURS * 60 * 60 * 1000);
 
-      const { data: session, error } = await serverClient
+      const { data: session, error } = await (serverClient as any)
         .from('admin_sessions')
         .insert({
           user_id: userId,
@@ -304,7 +304,7 @@ export class AuthService {
         cacheKey,
         async () => {
           const serverClient = createServerClient();
-          const { data: profile, error: profileError } = await serverClient
+          const { data: profile, error: profileError } = await (serverClient as any)
             .from('profiles')
             .select('*')
             .eq('id', userId)
@@ -315,17 +315,17 @@ export class AuthService {
           }
 
           // Get user roles
-          const { data: roles, error: rolesError } = await serverClient
+          const { data: roles, error: rolesError } = await (serverClient as any)
             .from('app_roles')
             .select('role')
             .eq('user_id', userId)
             .eq('is_active', true);
 
-          let userRoles = roles?.map(r => r.role) || [];
+          let userRoles = roles?.map((r: any) => r.role) || [];
           
           // If no roles found but user is admin, create admin role and use it
           if (userRoles.length === 0 && profile.is_admin) {
-            await serverClient
+            await (serverClient as any)
               .from('app_roles')
               .insert({
                 user_id: userId,
@@ -369,7 +369,7 @@ export class AuthService {
   static async validateSession(sessionToken: string): Promise<AuthResponse> {
     try {
       const serverClient = createServerClient();
-      const { data: session, error } = await serverClient
+      const { data: session, error } = await (serverClient as any)
         .from('admin_sessions')
         .select('*')
         .eq('session_token', sessionToken)
@@ -384,7 +384,7 @@ export class AuthService {
         };
       }
       // Update last accessed time
-      await serverClient
+      await (serverClient as any)
         .from('admin_sessions')
         .update({ last_accessed_at: new Date().toISOString() })
         .eq('id', session.id);
@@ -411,7 +411,7 @@ export class AuthService {
   static async logout(sessionToken: string): Promise<{ success: boolean; error?: string }> {
     try {
       const serverClient = createServerClient();
-      const { error } = await serverClient
+      const { error } = await (serverClient as any)
         .from('admin_sessions')
         .update({ is_active: false })
         .eq('session_token', sessionToken);
@@ -444,7 +444,7 @@ export class AuthService {
   ): Promise<boolean> {
     try {
       const serverClient = createServerClient();
-      const { data, error } = await serverClient.rpc('has_permission', {
+      const { data, error } = await (serverClient as any).rpc('has_permission', {
         resource_name: resource,
         action_name: action,
       });
@@ -464,7 +464,7 @@ export class AuthService {
       const serverClient = createServerClient();
       
       // Get user profile first
-      const { data: profile, error: profileError } = await serverClient
+      const { data: profile, error: profileError } = await (serverClient as any)
         .from('profiles')
         .select('admin_level, is_admin')
         .eq('id', userId)
@@ -480,7 +480,7 @@ export class AuthService {
       }
 
       // Check if user has any roles in app_roles table
-      const { data: roles, error: rolesError } = await serverClient
+      const { data: roles, error: rolesError } = await (serverClient as any)
         .from('app_roles')
         .select('role')
         .eq('user_id', userId)
@@ -500,7 +500,7 @@ export class AuthService {
       };
 
       // Return the highest role level
-      const maxLevel = Math.max(...roles.map(r => roleLevels[r.role] || 0));
+      const maxLevel = Math.max(...roles.map((r: any) => roleLevels[r.role] || 0));
       return maxLevel;
     } catch (error) {
       console.error('Role level check error:', error);
@@ -514,7 +514,7 @@ export class AuthService {
   private static async updateLoginStats(userId: string): Promise<void> {
     try {
       const serverClient = createServerClient();
-      await serverClient
+      await (serverClient as any)
         .from('profiles')
         .update({
           last_login_at: new Date().toISOString(),
@@ -522,7 +522,7 @@ export class AuthService {
         .eq('id', userId);
 
       // Increment login count separately
-      await serverClient.rpc('increment_login_count', { user_id: userId });
+      await (serverClient as any).rpc('increment_login_count', { user_id: userId });
     } catch (error) {
       console.error('Login stats update error:', error);
     }
@@ -581,13 +581,13 @@ export class AuthService {
       const now = new Date().toISOString();
 
       // Clean up expired sessions
-      await serverClient
+      await (serverClient as any)
         .from('admin_sessions')
         .update({ is_active: false })
         .lt('expires_at', now);
 
       // Clean up expired OTP codes
-      await serverClient
+      await (serverClient as any)
         .from('otp_codes')
         .delete()
         .lt('expires_at', now);

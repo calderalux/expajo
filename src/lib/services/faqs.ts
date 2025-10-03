@@ -1,5 +1,5 @@
 import { supabase } from '../supabase';
-import { Database } from '../supabase';
+import { Database } from '@/types/database';
 
 type FAQ = Database['public']['Tables']['faqs']['Row'];
 type FAQInsert = Database['public']['Tables']['faqs']['Insert'];
@@ -62,7 +62,7 @@ export class FAQService {
    */
   static async createFAQ(faq: FAQInsert): Promise<{ data: FAQ | null; error: any }> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('faqs')
         .insert(faq)
         .select()
@@ -80,7 +80,7 @@ export class FAQService {
    */
   static async updateFAQ(id: string, updates: FAQUpdate): Promise<{ data: FAQ | null; error: any }> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('faqs')
         .update(updates)
         .eq('id', id)
@@ -135,7 +135,7 @@ export class FAQService {
         order_index: index + 1,
       }));
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('faqs')
         .upsert(updates);
 

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import { Database, MembershipTier } from '@/lib/supabase';
+import { Database } from '@/types/database';
+import { MembershipTier } from '@/lib/supabase';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type ProfileInsert = Database['public']['Tables']['profiles']['Insert'];
@@ -91,7 +92,7 @@ export class ProfileService {
    * Create a new profile
    */
   static async createProfile(profile: ProfileInsert) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('profiles')
       .insert(profile)
       .select()
@@ -108,7 +109,7 @@ export class ProfileService {
    * Update a profile
    */
   static async updateProfile(id: string, updates: ProfileUpdate) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('profiles')
       .update(updates)
       .eq('id', id)
@@ -126,7 +127,7 @@ export class ProfileService {
    * Update user membership tier
    */
   static async updateMembership(id: string, membership: MembershipTier) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('profiles')
       .update({ membership })
       .eq('id', id)
@@ -144,7 +145,7 @@ export class ProfileService {
    * Enable/disable MFA for a user
    */
   static async toggleMFA(id: string, enabled: boolean) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('profiles')
       .update({ mfa_enabled: enabled })
       .eq('id', id)
@@ -171,12 +172,12 @@ export class ProfileService {
     }
 
     const stats = {
-      total_users: data?.length || 0,
-      basic_members: data?.filter(p => p.membership === MembershipTier.BASIC).length || 0,
-      premium_members: data?.filter(p => p.membership === MembershipTier.PREMIUM).length || 0,
-      vip_members: data?.filter(p => p.membership === MembershipTier.VIP).length || 0,
-      mfa_enabled_users: data?.filter(p => p.mfa_enabled).length || 0,
-      recent_signups: data?.filter(p => {
+      total_users: (data as any)?.length || 0,
+      basic_members: (data as any)?.filter((p: any) => p.membership === MembershipTier.BASIC).length || 0,
+      premium_members: (data as any)?.filter((p: any) => p.membership === MembershipTier.PREMIUM).length || 0,
+      vip_members: (data as any)?.filter((p: any) => p.membership === MembershipTier.VIP).length || 0,
+      mfa_enabled_users: (data as any)?.filter((p: any) => p.mfa_enabled).length || 0,
+      recent_signups: (data as any)?.filter((p: any) => {
         const createdAt = new Date(p.created_at);
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -285,7 +286,7 @@ export class AppRoleService {
       throw new Error(`Failed to fetch user role: ${error.message}`);
     }
 
-    return { data: data?.role || null, error: null };
+    return { data: (data as any)?.role || null, error: null };
   }
 
   /**
@@ -318,7 +319,7 @@ export class AppRoleService {
 
     if (existingRole) {
       // Update existing role
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('app_roles')
         .update({ role: 'admin' })
         .eq('user_id', userId)
@@ -337,7 +338,7 @@ export class AppRoleService {
         role: 'admin'
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('app_roles')
         .insert(roleInsert)
         .select()

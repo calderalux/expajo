@@ -2,7 +2,7 @@
 
 import { createContext, useContext, ReactNode } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Database } from './supabase';
+import { Database } from '@/types/database';
 
 type SupabaseClient = ReturnType<typeof createClient<Database>>;
 

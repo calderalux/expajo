@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { CategoryFilter } from '@/components/ui/CategoryFilter';
 import { Search, Filter, MapPin, Star, Clock, Users } from 'lucide-react';
-import { ExperienceService, Experience, ExperienceFilters } from '@/lib/services/experiences';
+import { Experience, ExperienceFilters } from '@/lib/services/experiences';
 import { motion } from 'framer-motion';
 
 interface ExperienceListState {
@@ -82,23 +82,37 @@ function ExperienceListContent() {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
       const sortOptions = getSortOptions(sortBy);
-      const { data, error } = await ExperienceService.getExperiences(
-        filters,
-        sortOptions,
-        12 // Limit per page
-      );
-
-      if (error) {
-        throw new Error(error);
+      
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (searchTerm) {
+        params.append('search', searchTerm);
       }
+      if (filters.category) {
+        params.append('category', filters.category);
+      }
+      if (filters.isFeatured !== undefined) {
+        params.append('featured', filters.isFeatured.toString());
+      }
+      params.append('limit', '12');
+      params.append('offset', ((page - 1) * 12).toString());
+
+      const response = await fetch(`/api/experiences/public?${params.toString()}`);
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch experiences');
+      }
+
+      const data = result.data || [];
 
       setState(prev => ({
         ...prev,
-        experiences: reset ? data || [] : [...prev.experiences, ...(data || [])],
+        experiences: reset ? data : [...prev.experiences, ...data],
         isLoading: false,
-        hasMore: (data || []).length === 12,
+        hasMore: result.pagination?.hasMore || false,
         currentPage: page,
-        totalCount: data?.length || 0,
+        totalCount: result.pagination?.total || 0,
       }));
     } catch (err: any) {
       setState(prev => ({
@@ -107,7 +121,7 @@ function ExperienceListContent() {
         error: err.message || 'Failed to fetch experiences',
       }));
     }
-  }, [filters, sortBy]);
+  }, [filters, searchTerm, sortBy]);
 
   // Load more experiences
   const loadMore = () => {

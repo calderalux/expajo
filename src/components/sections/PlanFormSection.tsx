@@ -1,34 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Calendar, Users } from 'lucide-react';
 import { DynamicForm, FormField, FormAction } from '@/components/forms/DynamicForm';
-import { PlanRequestService, PlanRequestFormData } from '@/lib/services/planRequests';
-
-// Nigerian states and cities data
-const nigerianLocations = [
-  { value: 'abuja', label: 'Abuja' },
-  { value: 'lagos', label: 'Lagos' },
-  { value: 'calabar', label: 'Calabar' },
-  { value: 'kano', label: 'Kano' },
-  { value: 'ibadan', label: 'Ibadan' },
-  { value: 'port-harcourt', label: 'Port Harcourt' },
-  { value: 'benin', label: 'Benin' },
-  { value: 'kaduna', label: 'Kaduna' },
-  { value: 'maiduguri', label: 'Maiduguri' },
-  { value: 'zaria', label: 'Zaria' },
-  { value: 'aba', label: 'Aba' },
-  { value: 'jos', label: 'Jos' },
-  { value: 'ilorin', label: 'Ilorin' },
-  { value: 'oyo', label: 'Oyo' },
-  { value: 'enugu', label: 'Enugu' },
-  { value: 'abeokuta', label: 'Abeokuta' },
-  { value: 'sokoto', label: 'Sokoto' },
-  { value: 'onitsha', label: 'Onitsha' },
-  { value: 'warri', label: 'Warri' },
-  { value: 'akure', label: 'Akure' },
-];
+import { PlanRequestFormData } from '@/lib/services/planRequests';
+// Removed DestinationService import - now using API route
 
 const guestOptions = [
   { value: '1', label: '1 Adult' },
@@ -64,17 +41,50 @@ const stats = [
 
 export const PlanFormSection: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [destinations, setDestinations] = useState<{ value: string; label: string }[]>([]);
+  const [destinationsLoading, setDestinationsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDestinations = async () => {
+      try {
+        const response = await fetch('/api/destinations/public');
+        const result = await response.json();
+        if (result.success && result.data) {
+          const destinationOptions = result.data.map((dest: { name: string; country: any; }) => ({
+            value: dest.name.toLowerCase().replace(/\s+/g, '-'),
+            label: `${dest.name}, ${dest.country}`,
+          }));
+          setDestinations(destinationOptions);
+        }
+      } catch (error) {
+        console.error('Error fetching destinations:', error);
+        // Fallback to static data
+        setDestinations([
+          { value: 'abuja', label: 'Abuja, Nigeria' },
+          { value: 'lagos', label: 'Lagos, Nigeria' },
+          { value: 'calabar', label: 'Calabar, Nigeria' },
+          { value: 'kano', label: 'Kano, Nigeria' },
+          { value: 'ibadan', label: 'Ibadan, Nigeria' },
+        ]);
+      } finally {
+        setDestinationsLoading(false);
+      }
+    };
+
+    fetchDestinations();
+  }, []);
 
   const formFields: FormField[] = [
     {
       id: 'location',
       name: 'location',
       type: 'select',
-      label: 'State/City',
-      placeholder: 'Abuja, Lagos, Calabar...',
+      label: 'Destination',
+      placeholder: destinationsLoading ? 'Loading destinations...' : 'Select a destination',
       required: true,
-      options: nigerianLocations,
+      options: destinations,
       icon: <MapPin size={20} className="text-gray-400" />,
+      disabled: destinationsLoading,
     },
     {
       id: 'date',
@@ -129,11 +139,19 @@ export const PlanFormSection: React.FC = () => {
         contact_phone: data.contact_phone || '',
       };
 
-      // Submit to database
-      const { data: result, error } = await PlanRequestService.createPlanRequest(formData);
+      // Submit to database via API
+      const response = await fetch('/api/plan-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
       
-      if (error) {
-        console.error('Error submitting plan request:', error);
+      const result = await response.json();
+      
+      if (!result.success) {
+        console.error('Error submitting plan request:', result.error);
         // TODO: Show error message to user
         return;
       }

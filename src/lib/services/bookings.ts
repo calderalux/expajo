@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import { Database, BookingStatus, PaymentStatus } from '@/lib/supabase';
+import { Database } from '@/types/database';
+import { BookingStatus, PaymentStatus } from '@/lib/supabase';
 
 type Booking = Database['public']['Tables']['bookings']['Row'];
 type BookingInsert = Database['public']['Tables']['bookings']['Insert'];
@@ -232,11 +233,11 @@ export class BookingService {
     }
 
     // Calculate total price
-    let totalPrice = packageData.base_price * bookingData.traveler_count;
+    let totalPrice = (packageData as any).base_price * bookingData.traveler_count;
 
     // Apply discount if available
-    if (packageData.discount_percent && packageData.discount_percent > 0) {
-      totalPrice = totalPrice * (1 - packageData.discount_percent / 100);
+    if ((packageData as any).discount_percent && (packageData as any).discount_percent > 0) {
+      totalPrice = totalPrice * (1 - (packageData as any).discount_percent / 100);
     }
 
     // Add selected options pricing
@@ -259,8 +260,8 @@ export class BookingService {
         throw new Error(`Failed to fetch package options: ${optionsError.message}`);
       }
 
-      optionsTotal = options?.reduce((sum, option) => {
-        const optionPrice = option.package_item_options?.reduce((optSum, opt) => optSum + (opt.price || 0), 0) || 0;
+      optionsTotal = (options as any)?.reduce((sum: any, option: any) => {
+        const optionPrice = (option as any).package_item_options?.reduce((optSum: any, opt: any) => optSum + (opt.price || 0), 0) || 0;
         return sum + optionPrice * bookingData.traveler_count;
       }, 0) || 0;
 
@@ -269,11 +270,11 @@ export class BookingService {
 
     // Create pricing breakdown
     const pricingBreakdown = {
-      base_price: packageData.base_price,
+      base_price: (packageData as any).base_price,
       traveler_count: bookingData.traveler_count,
-      subtotal: packageData.base_price * bookingData.traveler_count,
-      discount_percent: packageData.discount_percent || 0,
-      discount_amount: packageData.discount_percent ? (packageData.base_price * bookingData.traveler_count * packageData.discount_percent / 100) : 0,
+      subtotal: (packageData as any).base_price * bookingData.traveler_count,
+      discount_percent: (packageData as any).discount_percent || 0,
+      discount_amount: (packageData as any).discount_percent ? ((packageData as any).base_price * bookingData.traveler_count * (packageData as any).discount_percent / 100) : 0,
       options_total: optionsTotal,
       concierge_fee: bookingData.concierge ? 50 : 0, // Example concierge fee
       total: totalPrice + (bookingData.concierge ? 50 : 0)
@@ -293,7 +294,7 @@ export class BookingService {
       payment_status: PaymentStatus.PENDING
     };
 
-    const { data: booking, error: bookingError } = await supabase
+    const { data: booking, error: bookingError } = await (supabase as any)
       .from('bookings')
       .insert(bookingInsert)
       .select()
@@ -323,8 +324,8 @@ export class BookingService {
       }
 
       // Update booking options with correct names and prices
-      const updatedBookingOptions = bookingOptions.map(bookingOption => {
-        const optionDetail = optionDetails?.find(opt => opt.id === bookingOption.option_id);
+      const updatedBookingOptions = (bookingOptions as any).map((bookingOption: any) => {
+        const optionDetail = (optionDetails as any)?.find((opt: any) => opt.id === bookingOption.option_id);
         return {
           ...bookingOption,
           option_name: optionDetail?.name || '',
@@ -348,7 +349,7 @@ export class BookingService {
    * Update booking status
    */
   static async updateBookingStatus(id: string, status: BookingStatus) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('bookings')
       .update({ status })
       .eq('id', id)
@@ -375,7 +376,7 @@ export class BookingService {
       payment_reference: paymentReference
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('bookings')
       .update(updateData)
       .eq('id', id)
@@ -393,7 +394,7 @@ export class BookingService {
    * Cancel a booking
    */
   static async cancelBooking(id: string, reason?: string) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('bookings')
       .update({
         status: BookingStatus.CANCELLED,
@@ -414,7 +415,7 @@ export class BookingService {
    * Complete a booking
    */
   static async completeBooking(id: string) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('bookings')
       .update({ status: BookingStatus.COMPLETED })
       .eq('id', id)
@@ -436,7 +437,7 @@ export class BookingService {
     // For now, we'll just update the qr_code_url field
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${id}`;
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('bookings')
       .update({ qr_code_url: qrCodeUrl })
       .eq('id', id)
@@ -463,14 +464,14 @@ export class BookingService {
     }
 
     const stats = {
-      total_bookings: data?.length || 0,
-      pending_bookings: data?.filter(b => b.status === BookingStatus.PENDING).length || 0,
-      confirmed_bookings: data?.filter(b => b.status === BookingStatus.CONFIRMED).length || 0,
-      completed_bookings: data?.filter(b => b.status === BookingStatus.COMPLETED).length || 0,
-      cancelled_bookings: data?.filter(b => b.status === BookingStatus.CANCELLED).length || 0,
-      total_revenue: data?.reduce((sum, b) => sum + (b.total_price || 0), 0) || 0,
-      paid_bookings: data?.filter(b => b.payment_status === PaymentStatus.PAID).length || 0,
-      pending_payments: data?.filter(b => b.payment_status === PaymentStatus.PENDING).length || 0
+      total_bookings: (data as any)?.length || 0,
+      pending_bookings: (data as any)?.filter((b: any) => b.status === BookingStatus.PENDING).length || 0,
+      confirmed_bookings: (data as any)?.filter((b: any) => b.status === BookingStatus.CONFIRMED).length || 0,
+      completed_bookings: (data as any)?.filter((b: any) => b.status === BookingStatus.COMPLETED).length || 0,
+      cancelled_bookings: (data as any)?.filter((b: any) => b.status === BookingStatus.CANCELLED).length || 0,
+      total_revenue: (data as any)?.reduce((sum: any, b: any) => sum + (b.total_price || 0), 0) || 0,
+      paid_bookings: (data as any)?.filter((b: any) => b.payment_status === PaymentStatus.PAID).length || 0,
+      pending_payments: (data as any)?.filter((b: any) => b.payment_status === PaymentStatus.PENDING).length || 0
     };
 
     return { data: stats, error: null };

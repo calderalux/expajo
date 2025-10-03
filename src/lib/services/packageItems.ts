@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import { Database, ItemType } from '@/lib/supabase';
+import { Database } from '@/types/database';
+import { ItemType } from '@/lib/supabase';
 
 type PackageItem = Database['public']['Tables']['package_items']['Row'];
 type PackageItemInsert = Database['public']['Tables']['package_items']['Insert'];
@@ -87,7 +88,7 @@ export class PackageItemService {
    * Create a new package item
    */
   static async createPackageItem(item: PackageItemInsert) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('package_items')
       .insert(item)
       .select()
@@ -104,7 +105,7 @@ export class PackageItemService {
    * Update a package item
    */
   static async updatePackageItem(id: string, updates: PackageItemUpdate) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('package_items')
       .update(updates)
       .eq('id', id)
@@ -217,7 +218,7 @@ export class PackageItemOptionService {
    * Create a new package item option
    */
   static async createPackageItemOption(option: PackageItemOptionInsert) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('package_item_options')
       .insert(option)
       .select(`
@@ -241,7 +242,7 @@ export class PackageItemOptionService {
    * Update a package item option
    */
   static async updatePackageItemOption(id: string, updates: PackageItemOptionUpdate) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('package_item_options')
       .update(updates)
       .eq('id', id)
@@ -282,7 +283,7 @@ export class PackageItemOptionService {
    * Activate/deactivate a package item option
    */
   static async toggleOptionStatus(id: string, isActive: boolean) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('package_item_options')
       .update({ is_active: isActive })
       .eq('id', id)
@@ -333,7 +334,7 @@ export class PackageOptionMappingService {
    * Add an option to a package
    */
   static async addOptionToPackage(packageId: string, optionId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('package_option_mappings')
       .insert({
         package_id: packageId,
@@ -375,7 +376,7 @@ export class PackageOptionMappingService {
       option_id: optionId
     }));
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('package_option_mappings')
       .insert(mappings)
       .select();

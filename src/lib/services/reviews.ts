@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { Database } from '@/lib/supabase';
+import { Database } from '@/types/database';
 
 type Review = Database['public']['Tables']['reviews']['Row'];
 type ReviewInsert = Database['public']['Tables']['reviews']['Insert'];
@@ -204,7 +204,7 @@ export class ReviewService {
 
     const { data, error } = await supabase
       .from('reviews')
-      .insert(review)
+      .insert(review as any)
       .select(`
         *,
         profiles (
@@ -239,9 +239,9 @@ export class ReviewService {
       throw new Error('Rating must be between 1 and 5');
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('reviews')
-      .update(updates)
+      .update(updates as any)
       .eq('id', id)
       .select(`
         *,
@@ -264,7 +264,7 @@ export class ReviewService {
 
     // Update package rating and review count if rating changed
     if (updates.rating && data) {
-      await this.updatePackageRating(data.package_id);
+      await this.updatePackageRating((data as any).package_id);
     }
 
     return { data, error: null };
@@ -296,7 +296,7 @@ export class ReviewService {
 
     // Update package rating and review count
     if (review) {
-      await this.updatePackageRating(review.package_id);
+      await this.updatePackageRating((review as any).package_id);
     }
 
     return { error: null };
@@ -317,7 +317,7 @@ export class ReviewService {
 
     if (!reviews || reviews.length === 0) {
       // No reviews, set to default values
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('packages')
         .update({ avg_rating: 0, review_count: 0 })
         .eq('id', packageId);
@@ -328,10 +328,10 @@ export class ReviewService {
       return;
     }
 
-    const avgRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
-    const reviewCount = reviews.length;
+    const avgRating = (reviews as any).reduce((sum: any, review: any) => sum + review.rating, 0) / (reviews as any).length;
+    const reviewCount = (reviews as any).length;
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('packages')
       .update({ avg_rating: avgRating, review_count: reviewCount })
       .eq('id', packageId);
@@ -371,10 +371,10 @@ export class ReviewService {
       };
     }
 
-    const totalReviews = reviews.length;
-    const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews;
+    const totalReviews = (reviews as any).length;
+    const averageRating = (reviews as any).reduce((sum: any, review: any) => sum + review.rating, 0) / totalReviews;
     
-    const ratingDistribution = reviews.reduce((dist, review) => {
+    const ratingDistribution = (reviews as any).reduce((dist: any, review: any) => {
       dist[review.rating as keyof typeof dist]++;
       return dist;
     }, { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 });
@@ -412,14 +412,14 @@ export class ReviewService {
       };
     }
 
-    const totalReviews = reviews.length;
-    const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews;
+    const totalReviews = (reviews as any).length;
+    const averageRating = (reviews as any).reduce((sum: any, review: any) => sum + review.rating, 0) / totalReviews;
     
     // Count reviews from last 30 days
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
-    const recentReviewsCount = reviews.filter(review => 
+    const recentReviewsCount = (reviews as any).filter((review: any) => 
       new Date(review.created_at) >= thirtyDaysAgo
     ).length;
 
@@ -454,12 +454,12 @@ export class ReviewService {
     }
 
     // Check if booking is completed
-    if (booking.status !== 'completed') {
+    if ((booking as any).status !== 'completed') {
       return { data: false, error: null };
     }
 
     // Check if booking end date has passed
-    const endDate = new Date(booking.end_date);
+    const endDate = new Date((booking as any).end_date);
     const now = new Date();
     if (endDate > now) {
       return { data: false, error: null };

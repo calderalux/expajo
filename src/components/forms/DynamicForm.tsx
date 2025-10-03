@@ -10,6 +10,7 @@ export interface FormField {
   label: string;
   placeholder?: string;
   required?: boolean;
+  disabled?: boolean;
   options?: { value: string; label: string }[];
   icon?: React.ReactNode;
   validation?: {
@@ -132,9 +133,11 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
               className={cn(
                 'w-full px-4 py-3 border rounded-input focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all duration-200 appearance-none cursor-pointer',
                 field.icon ? 'pl-10' : 'pl-4',
-                hasError ? 'border-red-500' : 'border-gray-300'
+                hasError ? 'border-red-500' : 'border-gray-300',
+                field.disabled && 'opacity-50 cursor-not-allowed'
               )}
               required={field.required}
+              disabled={field.disabled}
             >
               <option value="" disabled>
                 {field.placeholder || `Select ${field.label.toLowerCase()}`}
@@ -156,6 +159,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                 value={value ? new Date(value) : null}
                 onChange={(date) => handleInputChange(field.name, date ? date.toISOString().split('T')[0] : '')}
                 placeholder={field.placeholder || 'dd/mm/yy'}
+                disabled={field.disabled}
                 className={cn(
                   'w-full',
                   hasError ? 'border-red-500' : 'border-gray-300'
@@ -184,10 +188,12 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
               className={cn(
                 'w-full px-4 py-3 border rounded-input focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all duration-200 resize-none',
                 field.icon ? 'pl-10' : 'pl-4',
-                hasError ? 'border-red-500' : 'border-gray-300'
+                hasError ? 'border-red-500' : 'border-gray-300',
+                field.disabled && 'opacity-50 cursor-not-allowed'
               )}
               rows={3}
               required={field.required}
+              disabled={field.disabled}
             />
           ) : (
             <input
@@ -198,9 +204,11 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
               className={cn(
                 'w-full px-4 py-3 border rounded-input focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all duration-200',
                 field.icon ? 'pl-10' : 'pl-4',
-                hasError ? 'border-red-500' : 'border-gray-300'
+                hasError ? 'border-red-500' : 'border-gray-300',
+                field.disabled && 'opacity-50 cursor-not-allowed'
               )}
               required={field.required}
+              disabled={field.disabled}
               min={field.validation?.min}
               max={field.validation?.max}
               pattern={field.validation?.pattern}
