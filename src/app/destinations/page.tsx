@@ -107,8 +107,6 @@ function DestinationListContent() {
 
       const data = result.data || [];
 
-      const data = result.data || [];
-
       setState((prev) => ({
         ...prev,
         destinations: reset ? data : [...prev.destinations, ...data],

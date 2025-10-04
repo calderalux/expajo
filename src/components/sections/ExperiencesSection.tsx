@@ -66,18 +66,10 @@ export const ExperiencesSection: React.FC = () => {
     return experiences.slice(0, 6);
   };
 
-  // Determine if we should show the "More experiences" button
-  const shouldShowMoreButton = () => {
-    return experiences.length > 6;
-  };
-
-  const handleMoreExperiences = () => {
-    router.push('/experiences');
-  };
 
   const handleLoadMore = () => {
     // Navigate to experiences page
-    window.location.href = '/experiences';
+    router.push('/experiences');
   };
 
   return (
@@ -102,11 +94,11 @@ export const ExperiencesSection: React.FC = () => {
 
           {/* Experiences Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12 items-stretch">
-            {isLoading
-              ? // Show skeleton loaders while loading
-                Array.from({ length: 6 }).map((_, index) => (
-                  <ExperienceCardSkeleton key={index} />
-                ))
+            {isLoading ? (
+              // Show skeleton loaders while loading
+              Array.from({ length: 6 }).map((_, index) => (
+                <ExperienceCardSkeleton key={index} />
+              ))
             ) : error ? (
               // Show error state
               <div className="col-span-full text-center py-12">
@@ -127,24 +119,26 @@ export const ExperiencesSection: React.FC = () => {
                   View All Experiences
                 </Button>
               </div>
-              : // Show actual experience cards
-                getDisplayedExperiences().map((experience, index) => (
-                  <motion.div
-                    key={experience.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: index * 0.1 }}
-                    className="h-full"
-                  >
-                    <ExperienceCard
-                      experience={experience}
-                      onViewDetails={() => handleViewDetails(experience.id)}
-                      onBookNow={() => handleBookNow(experience.id)}
-                      onToggleFavorite={() => handleToggleFavorite(experience.id)}
-                      onShare={() => handleShare(experience.id)}
-                    />
-                  </motion.div>
-                ))}
+            ) : (
+              // Show actual experience cards
+              getDisplayedExperiences().map((experience, index) => (
+                <motion.div
+                  key={experience.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="h-full"
+                >
+                  <ExperienceCard
+                    experience={experience}
+                    onViewDetails={() => handleViewDetails(experience.id)}
+                    onBookNow={() => handleBookNow(experience.id)}
+                    onToggleFavorite={() => handleToggleFavorite(experience.id)}
+                    onShare={() => handleShare(experience.id)}
+                  />
+                </motion.div>
+              ))
+            )}
           </div>
 
           {/* Load More Button */}

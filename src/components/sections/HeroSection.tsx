@@ -82,20 +82,20 @@ export const HeroSection: React.FC = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="bg-gray-50 rounded-2xl p-6"
           >
-            {/* Two-row layout: Category filters on top, results/sort on bottom */}
-            <div className="space-y-6">
-              {/* Top Row: Category Filters with horizontal scroll */}
-              <div className="w-full">
+            {/* Single row layout: Category filters on left, results/sort on right */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              {/* Left Side: Category Filters */}
+              <div className="flex-1 min-w-0">
                 <CategoryFilter
                   categories={categories}
                   activeCategory={activeCategory}
                   onCategoryChange={setActiveCategory}
-                  className="justify-start flex-nowrap overflow-x-auto scrollbar-hide"
+                  className="justify-start flex-wrap lg:flex-nowrap overflow-x-auto scrollbar-hide"
                 />
               </div>
 
-              {/* Bottom Row: Results count and Sort dropdown evenly spaced */}
-              <div className="flex items-center justify-between">
+              {/* Right Side: Results count and Sort dropdown */}
+              <div className="flex items-center gap-4 flex-shrink-0">
                 {/* Results Count */}
                 <div className="text-sm text-gray-600 font-medium whitespace-nowrap">
                   6 experiences found
