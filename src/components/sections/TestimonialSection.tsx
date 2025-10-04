@@ -26,7 +26,7 @@ export const TestimonialSection: React.FC = () => {
               Loved by Travelers Worldwide
             </h2>
             <p className="text-lg md:text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-              Real stories from real travelers who've discovered the magic of Nigeria with Expajo.
+              Real stories from real travelers who&apos;ve discovered the magic of Nigeria with Expajo.
             </p>
           </motion.div>
 

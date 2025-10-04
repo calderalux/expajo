@@ -2,7 +2,13 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Calendar, Users, MessageSquare } from 'lucide-react';
 
@@ -34,13 +40,17 @@ export const BookingForm: React.FC<BookingFormProps> = ({
 
   const calculateTotal = () => {
     if (!startDate || !endDate) return 0;
-    const nights = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const nights = Math.ceil(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
     return nights * pricePerNight;
   };
 
   const calculateNights = () => {
     if (!startDate || !endDate) return 0;
-    return Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.ceil(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -62,9 +72,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
     <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="text-2xl font-playfair">Book Your Stay</CardTitle>
-        <CardDescription>
-          Complete your booking details below
-        </CardDescription>
+        <CardDescription>Complete your booking details below</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -74,8 +82,18 @@ export const BookingForm: React.FC<BookingFormProps> = ({
               type="date"
               placeholder="Select check-in date"
               leftIcon={<Calendar size={20} className="text-gray-400" />}
-              value={startDate ? startDate.toISOString().split('T')[0] : ''}
-              onChange={(e) => setStartDate(e.target.value ? new Date(e.target.value) : undefined)}
+              value={
+                startDate
+                  ? `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`
+                  : ''
+              }
+              onChange={(e) =>
+                setStartDate(
+                  e.target.value
+                    ? new Date(e.target.value + 'T00:00:00')
+                    : undefined
+                )
+              }
               required
             />
           </div>
@@ -86,8 +104,18 @@ export const BookingForm: React.FC<BookingFormProps> = ({
               type="date"
               placeholder="Select check-out date"
               leftIcon={<Calendar size={20} className="text-gray-400" />}
-              value={endDate ? endDate.toISOString().split('T')[0] : ''}
-              onChange={(e) => setEndDate(e.target.value ? new Date(e.target.value) : undefined)}
+              value={
+                endDate
+                  ? `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`
+                  : ''
+              }
+              onChange={(e) =>
+                setEndDate(
+                  e.target.value
+                    ? new Date(e.target.value + 'T00:00:00')
+                    : undefined
+                )
+              }
               required
             />
           </div>

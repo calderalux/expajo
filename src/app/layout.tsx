@@ -19,19 +19,28 @@ const lato = Lato({
 
 export const metadata: Metadata = {
   title: 'Expajo - Find Your Perfect Short-Term Rental',
-  description: 'Discover amazing short-term rental properties for your next adventure. Book with confidence and experience the best of every destination.',
-  keywords: ['short-term rental', 'vacation rental', 'booking', 'travel', 'accommodation'],
+  description:
+    'Discover amazing short-term rental properties for your next adventure. Book with confidence and experience the best of every destination.',
+  keywords: [
+    'short-term rental',
+    'vacation rental',
+    'booking',
+    'travel',
+    'accommodation',
+  ],
   authors: [{ name: 'Expajo Team' }],
   openGraph: {
     title: 'Expajo - Find Your Perfect Short-Term Rental',
-    description: 'Discover amazing short-term rental properties for your next adventure.',
+    description:
+      'Discover amazing short-term rental properties for your next adventure.',
     type: 'website',
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Expajo - Find Your Perfect Short-Term Rental',
-    description: 'Discover amazing short-term rental properties for your next adventure.',
+    description:
+      'Discover amazing short-term rental properties for your next adventure.',
   },
   robots: {
     index: true,
@@ -45,11 +54,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${playfair.variable} ${lato.variable}`} suppressHydrationWarning>
-      <body className="min-h-screen bg-background font-lato antialiased" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${playfair.variable} ${lato.variable}`}
+      suppressHydrationWarning
+    >
+      <body
+        className="min-h-screen bg-background font-lato antialiased"
+        suppressHydrationWarning
+      >
         <MantineProviderWrapper>
           <SupabaseProvider>
-            {children}
+            <div suppressHydrationWarning>{children}</div>
           </SupabaseProvider>
         </MantineProviderWrapper>
       </body>

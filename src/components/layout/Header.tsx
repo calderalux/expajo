@@ -6,13 +6,30 @@ import Link from 'next/link';
 import { Search, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { PlanYourExperienceModal } from '@/components/modals/PlanYourExperienceModal';
 
 export const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const handleStartPlanning = () => {
+    setIsModalOpen(true);
+    setIsMobileMenuOpen(false); // Close mobile menu if open
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleModalSuccess = async (data: any) => {
+    console.log('Plan request completed from header:', data);
+    // Handle the success case - could redirect or show success message
+    setIsModalOpen(false);
   };
 
   return (
@@ -35,7 +52,10 @@ export const Header: React.FC = () => {
           {/* Search Bar - Desktop */}
           <div className="hidden lg:flex items-center flex-1 max-w-md mx-8">
             <div className="relative w-full">
-              <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Search
+                size={20}
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
               <input
                 type="text"
                 placeholder="Search experiences"
@@ -48,14 +68,14 @@ export const Header: React.FC = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link 
-              href="/experiences" 
+            <Link
+              href="/experiences"
               className="text-gray-700 hover:text-primary transition-colors duration-200 font-medium"
             >
               Experiences
             </Link>
-            <Link 
-              href="/destinations" 
+            <Link
+              href="/destinations"
               className="text-gray-700 hover:text-primary transition-colors duration-200 font-medium"
             >
               Destinations
@@ -64,10 +84,11 @@ export const Header: React.FC = () => {
 
           {/* CTA Button - Desktop */}
           <div className="hidden md:flex items-center">
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               size="md"
               className="px-6 py-2"
+              onClick={handleStartPlanning}
             >
               Start Planning
             </Button>
@@ -90,7 +111,10 @@ export const Header: React.FC = () => {
         {/* Mobile Search Bar */}
         <div className="lg:hidden py-4 border-t border-gray-200">
           <div className="relative">
-            <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Search
+              size={20}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            />
             <input
               type="text"
               placeholder="Search experiences"
@@ -105,26 +129,26 @@ export const Header: React.FC = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200">
             <nav className="flex flex-col space-y-4">
-              <Link 
-                href="/experiences" 
+              <Link
+                href="/experiences"
                 className="text-gray-700 hover:text-primary transition-colors duration-200 font-medium py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Experiences
               </Link>
-              <Link 
-                href="/destinations" 
+              <Link
+                href="/destinations"
                 className="text-gray-700 hover:text-primary transition-colors duration-200 font-medium py-2"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Destinations
               </Link>
               <div className="pt-4">
-                <Button 
-                  variant="primary" 
+                <Button
+                  variant="primary"
                   size="md"
                   className="w-full"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  onClick={handleStartPlanning}
                 >
                   Start Planning
                 </Button>
@@ -133,6 +157,13 @@ export const Header: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Plan Your Experience Modal */}
+      <PlanYourExperienceModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onSuccess={handleModalSuccess}
+      />
     </header>
   );
 };

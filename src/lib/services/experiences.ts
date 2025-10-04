@@ -151,7 +151,7 @@ export class ExperienceService {
     }
 
     // Get unique categories
-    const categories = [...new Set(data.map(item => item.category))];
+    const categories = Array.from(new Set(data.map((item) => item.category)));
     return { data: categories, error: null };
   }
 

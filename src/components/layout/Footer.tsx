@@ -46,7 +46,7 @@ export const Footer: React.FC = () => {
                 Expajo
               </h2>
               <p className="text-gray-300 text-sm leading-relaxed">
-                Nigeria's premier luxury travel platform, curating authentic and safe experiences for diasporans and international travelers. Your journey to discover the real Nigeria starts here.
+                Nigeria&apos;s premier luxury travel platform, curating authentic and safe experiences for diasporans and international travelers. Your journey to discover the real Nigeria starts here.
               </p>
             </div>
 

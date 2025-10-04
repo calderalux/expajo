@@ -51,7 +51,7 @@ export const DestinationDetailModal: React.FC<DestinationDetailModalProps> = ({
           isOpen={isOpen}
           onClose={onClose}
           size="xl"
-          className="max-w-4xl"
+          // className="max-w-4xl"
         >
           <div className="relative">
             {/* Close Button */}

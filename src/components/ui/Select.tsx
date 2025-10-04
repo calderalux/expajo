@@ -27,7 +27,7 @@ export const Select: React.FC<SelectProps> = ({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2.5 pr-8 bg-white border border-gray-300 rounded-input text-sm text-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
+        className="w-full px-3 py-2.5 pr-8 bg-white border border-gray-300 rounded-full text-sm text-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent outline-none appearance-none cursor-pointer"
       >
         {placeholder && (
           <option value="" disabled>
@@ -40,7 +40,10 @@ export const Select: React.FC<SelectProps> = ({
           </option>
         ))}
       </select>
-      <ChevronDown size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+      <ChevronDown
+        size={16}
+        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+      />
     </div>
   );
 };
