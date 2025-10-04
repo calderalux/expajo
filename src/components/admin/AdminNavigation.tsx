@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { AuthGuard, useAuth, usePermission, useRoleLevel } from '@/components/auth/AuthGuard';
 import { Button } from '@/components/ui/Button';
 import { 
@@ -30,6 +32,7 @@ function AdminNavigationContent({ children, currentPage }: AdminNavigationProps)
   const { hasPermission: canManageUsers } = usePermission('users', 'read');
   const { hasPermission: canManageSettings } = usePermission('settings', 'read');
   const { roleLevel } = useRoleLevel();
+  const pathname = usePathname();
   
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -56,49 +59,49 @@ function AdminNavigationContent({ children, currentPage }: AdminNavigationProps)
       name: 'Dashboard',
       icon: BarChart3,
       href: '/admin',
-      active: currentPage === 'dashboard',
+      active: pathname === '/admin',
     },
     {
       name: 'Destinations',
       icon: MapPin,
       href: '/admin/destinations',
       permission: true, // Always show for admin users
-      active: currentPage === 'destinations',
+      active: pathname === '/admin/destinations',
     },
     {
       name: 'Experiences',
       icon: Shield,
       href: '/admin/experiences',
       permission: true, // Always show for admin users
-      active: currentPage === 'experiences',
+      active: pathname === '/admin/experiences',
     },
     {
       name: 'Packages',
       icon: Package,
       href: '/admin/packages',
       permission: true, // Always show for admin users
-      active: currentPage === 'packages',
+      active: pathname === '/admin/packages',
     },
     {
       name: 'Bookings',
       icon: Calendar,
       href: '/admin/bookings',
       permission: true, // Always show for admin users
-      active: currentPage === 'bookings',
+      active: pathname === '/admin/bookings',
     },
     {
       name: 'Users',
       icon: Users,
       href: '/admin/users',
       permission: true, // Always show for admin users
-      active: currentPage === 'users',
+      active: pathname === '/admin/users',
     },
     {
       name: 'Settings',
       icon: Settings,
       href: '/admin/settings',
       permission: true, // Always show for admin users
-      active: currentPage === 'settings',
+      active: pathname === '/admin/settings',
     },
   ].filter(item => item.permission !== false);
 
@@ -123,7 +126,7 @@ function AdminNavigationContent({ children, currentPage }: AdminNavigationProps)
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
             {menuItems.map((item) => (
-              <a
+              <Link
                 key={item.name}
                 href={item.href}
                 className={cn(
@@ -132,10 +135,11 @@ function AdminNavigationContent({ children, currentPage }: AdminNavigationProps)
                     ? 'bg-primary text-white'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 )}
+                onClick={() => setSidebarOpen(false)}
               >
                 <item.icon className="mr-3 h-5 w-5" />
                 {item.name}
-              </a>
+              </Link>
             ))}
           </nav>
           
@@ -179,7 +183,7 @@ function AdminNavigationContent({ children, currentPage }: AdminNavigationProps)
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
             {menuItems.map((item) => (
-              <a
+              <Link
                 key={item.name}
                 href={item.href}
                 className={cn(
@@ -191,7 +195,7 @@ function AdminNavigationContent({ children, currentPage }: AdminNavigationProps)
               >
                 <item.icon className="mr-3 h-5 w-5" />
                 {item.name}
-              </a>
+              </Link>
             ))}
           </nav>
           

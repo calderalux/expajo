@@ -884,6 +884,41 @@ export interface Database {
           updated_at?: string;
         };
       };
+      package_experiences: {
+        Row: {
+          id: string;
+          package_id: string;
+          experience_id: string;
+          sort_order: number;
+          is_optional: boolean;
+          is_included_in_price: boolean;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          package_id: string;
+          experience_id: string;
+          sort_order?: number;
+          is_optional?: boolean;
+          is_included_in_price?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          package_id?: string;
+          experience_id?: string;
+          sort_order?: number;
+          is_optional?: boolean;
+          is_included_in_price?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+      };
     };
   };
 }
