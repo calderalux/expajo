@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
@@ -47,10 +48,15 @@ function DestinationListContent() {
     featured: searchParams.get('featured') === 'true' ? true : undefined,
   });
 
-  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams.get('search') || ''
+  );
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'title-asc');
-  const [selectedCountry, setSelectedCountry] = useState(filters.country || 'All destinations');
-  const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState(
+    filters.country || 'All destinations'
+  );
+  const [selectedDestination, setSelectedDestination] =
+    useState<Destination | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [countries, setCountries] = useState<string[]>(['All destinations']);
   const [countriesLoading, setCountriesLoading] = useState(true);
@@ -73,7 +79,7 @@ function DestinationListContent() {
   // Fetch destinations
   const fetchDestinations = useCallback(async (page: number = 1, reset: boolean = false) => {
     try {
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       const sortOptions = getSortOptions(sortBy);
       
@@ -101,7 +107,9 @@ function DestinationListContent() {
 
       const data = result.data || [];
 
-      setState(prev => ({
+      const data = result.data || [];
+
+      setState((prev) => ({
         ...prev,
         destinations: reset ? data : [...prev.destinations, ...data],
         isLoading: false,
@@ -110,7 +118,7 @@ function DestinationListContent() {
         totalCount: data.length,
       }));
     } catch (err: any) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isLoading: false,
         error: err.message || 'Failed to fetch destinations',
@@ -218,7 +226,8 @@ function DestinationListContent() {
               Explore Destinations
             </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Discover amazing places to visit and unique experiences across Africa.
+              Discover amazing places to visit and unique experiences across
+              Africa.
             </p>
           </motion.div>
 
@@ -308,7 +317,9 @@ function DestinationListContent() {
           </div>
         ) : state.destinations.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-gray-500 text-lg mb-4">No destinations found</div>
+            <div className="text-gray-500 text-lg mb-4">
+              No destinations found
+            </div>
             <Button onClick={() => fetchDestinations(1, true)}>
               Reset Filters
             </Button>
@@ -327,7 +338,9 @@ function DestinationListContent() {
                     destination={destination}
                     onViewDetails={() => handleDestinationClick(destination)}
                     onExplore={() => console.log('Explore:', destination.id)}
-                    onToggleFavorite={() => console.log('Toggle favorite:', destination.id)}
+                    onToggleFavorite={() =>
+                      console.log('Toggle favorite:', destination.id)
+                    }
                     onShare={() => console.log('Share:', destination.id)}
                   />
                 </motion.div>
@@ -372,11 +385,13 @@ function DestinationListContent() {
 export default function DestinationsPage() {
   return (
     <Layout>
-      <Suspense fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      }>
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        }
+      >
         <DestinationListContent />
       </Suspense>
     </Layout>

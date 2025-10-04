@@ -45,16 +45,21 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = ({
   };
 
   return (
-    <div className={cn('bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300', className)}>
+    <div
+      className={cn(
+        'bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full',
+        className
+      )}
+    >
       {/* Image Section */}
-      <div className="relative h-64 w-full">
+      <div className="relative h-64 w-full flex-shrink-0">
         <Image
           src={experience.image_urls[0] || '/placeholder-experience.jpg'}
           alt={experience.title}
           fill
           className="object-cover"
         />
-        
+
         {/* Price Overlay */}
         <div className="absolute bottom-0 right-0 bg-black/80 text-white px-3 py-2 rounded-tl-2xl">
           <span className="text-sm font-medium">
@@ -82,58 +87,65 @@ export const ExperienceCard: React.FC<ExperienceCardProps> = ({
       </div>
 
       {/* Content Section */}
-      <div className="p-6 space-y-4">
-        {/* Location */}
-        <p className="text-sm text-gray-500">{experience.location}</p>
+      <div className="p-6 flex flex-col flex-grow">
+        {/* Top Content */}
+        <div className="space-y-4 flex-grow">
+          {/* Location */}
+          <p className="text-sm text-gray-500">{experience.location}</p>
 
-        {/* Title */}
-        <h3 className="text-xl font-bold font-playfair text-gray-900 line-clamp-2">
-          {experience.title}
-        </h3>
+          {/* Title */}
+          <h3 className="text-xl font-bold font-playfair text-gray-900 line-clamp-2">
+            {experience.title}
+          </h3>
 
-        {/* Rating */}
-        <div className="flex items-center gap-2">
-          <Star size={16} className="text-yellow-500 fill-current" />
-          <span className="text-sm font-medium text-gray-900">{experience.rating}</span>
-          <span className="text-sm text-gray-500">({experience.reviews_count})</span>
-        </div>
-
-        {/* Description */}
-        <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
-          {experience.description}
-        </p>
-
-        {/* Features */}
-        <div className="flex flex-wrap gap-2">
-          {experience.features.slice(0, 3).map((feature, index) => (
-            <span
-              key={index}
-              className="px-3 py-1 text-xs text-gray-600 bg-gray-100 rounded-full border border-gray-200"
-            >
-              {feature}
+          {/* Rating */}
+          <div className="flex items-center gap-2">
+            <Star size={16} className="text-yellow-500 fill-current" />
+            <span className="text-sm font-medium text-gray-900">
+              {experience.rating}
             </span>
-          ))}
-          {experience.features.length > 3 && (
-            <span className="px-3 py-1 text-xs text-gray-600 bg-gray-100 rounded-full border border-gray-200">
-              +{experience.features.length - 3} more
+            <span className="text-sm text-gray-500">
+              ({experience.reviews_count})
             </span>
-          )}
+          </div>
+
+          {/* Description */}
+          <p className="text-sm text-gray-600 line-clamp-3 leading-relaxed">
+            {experience.description}
+          </p>
+
+          {/* Features */}
+          <div className="flex flex-wrap gap-2">
+            {experience.features.slice(0, 3).map((feature, index) => (
+              <span
+                key={index}
+                className="px-3 py-1 text-xs text-gray-600 bg-gray-100 rounded-full border border-gray-200"
+              >
+                {feature}
+              </span>
+            ))}
+            {experience.features.length > 3 && (
+              <span className="px-3 py-1 text-xs text-gray-600 bg-gray-100 rounded-full border border-gray-200">
+                +{experience.features.length - 3} more
+              </span>
+            )}
+          </div>
+
+          {/* Duration & Capacity */}
+          <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-1">
+              <Clock size={14} />
+              <span>{experience.duration_hours} hours</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Users size={14} />
+              <span>Up to {experience.max_capacity}</span>
+            </div>
+          </div>
         </div>
 
-        {/* Duration & Capacity */}
-        <div className="flex items-center gap-4 text-sm text-gray-600">
-          <div className="flex items-center gap-1">
-            <Clock size={14} />
-            <span>{experience.duration_hours} hours</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Users size={14} />
-            <span>Up to {experience.max_capacity}</span>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-3 pt-2">
+        {/* Action Buttons - Always at bottom */}
+        <div className="flex gap-3 pt-4 mt-auto">
           <Button
             variant="outline"
             size="sm"

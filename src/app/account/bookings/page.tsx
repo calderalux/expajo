@@ -31,7 +31,8 @@ const mockBookings: Booking[] = [
       id: '1',
       title: 'Modern Downtown Apartment',
       location: 'New York, NY',
-      image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=300&h=200&fit=crop',
+      image:
+        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=300&h=200&fit=crop',
       price: 120,
     },
     startDate: '2024-01-15',
@@ -46,7 +47,8 @@ const mockBookings: Booking[] = [
       id: '2',
       title: 'Cozy Beach House',
       location: 'Miami, FL',
-      image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=300&h=200&fit=crop',
+      image:
+        'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=300&h=200&fit=crop',
       price: 200,
     },
     startDate: '2024-02-10',
@@ -60,7 +62,9 @@ const mockBookings: Booking[] = [
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>(mockBookings);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'upcoming' | 'past' | 'cancelled'>('all');
+  const [filter, setFilter] = useState<
+    'all' | 'upcoming' | 'past' | 'cancelled'
+  >('all');
   const supabase = useSupabase();
   const router = useRouter();
 
@@ -101,8 +105,8 @@ export default function BookingsPage() {
 
   const filteredBookings = bookings.filter((booking) => {
     const now = new Date();
-    const startDate = new Date(booking.startDate);
-    const endDate = new Date(booking.endDate);
+    const startDate = new Date(booking.startDate + 'T00:00:00');
+    const endDate = new Date(booking.endDate + 'T00:00:00');
 
     switch (filter) {
       case 'upcoming':
@@ -122,7 +126,7 @@ export default function BookingsPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString + 'T00:00:00').toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -149,7 +153,9 @@ export default function BookingsPage() {
             <h1 className="text-3xl font-bold font-playfair text-gray-900 mb-2">
               My Bookings
             </h1>
-            <p className="text-gray-600">Manage your reservations and travel plans</p>
+            <p className="text-gray-600">
+              Manage your reservations and travel plans
+            </p>
           </div>
 
           {/* Filters */}
@@ -182,10 +188,9 @@ export default function BookingsPage() {
                   No bookings found
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  {filter === 'all' 
+                  {filter === 'all'
                     ? "You haven't made any bookings yet."
-                    : `No ${filter} bookings found.`
-                  }
+                    : `No ${filter} bookings found.`}
                 </p>
                 <Button onClick={() => router.push('/search')}>
                   Start Exploring
@@ -222,7 +227,10 @@ export default function BookingsPage() {
                           <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
                             <div className="flex items-center">
                               <Calendar size={16} className="mr-1" />
-                              <span>{formatDate(booking.startDate)} - {formatDate(booking.endDate)}</span>
+                              <span>
+                                {formatDate(booking.startDate)} -{' '}
+                                {formatDate(booking.endDate)}
+                              </span>
                             </div>
                             <div className="flex items-center">
                               <Star size={16} className="mr-1" />
@@ -230,9 +238,12 @@ export default function BookingsPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${getStatusColor(booking.status)}`}>
+                            <span
+                              className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${getStatusColor(booking.status)}`}
+                            >
                               {getStatusIcon(booking.status)}
-                              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                              {booking.status.charAt(0).toUpperCase() +
+                                booking.status.slice(1)}
                             </span>
                           </div>
                         </div>
@@ -243,13 +254,25 @@ export default function BookingsPage() {
                             ${booking.totalPrice}
                           </div>
                           <div className="text-sm text-gray-600 mb-4">
-                            Total for {Math.ceil((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24))} nights
+                            Total for{' '}
+                            {Math.ceil(
+                              (new Date(
+                                booking.endDate + 'T00:00:00'
+                              ).getTime() -
+                                new Date(
+                                  booking.startDate + 'T00:00:00'
+                                ).getTime()) /
+                                (1000 * 60 * 60 * 24)
+                            )}{' '}
+                            nights
                           </div>
                           <div className="flex flex-col sm:flex-row gap-2">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => router.push(`/listing/${booking.listing.id}`)}
+                              onClick={() =>
+                                router.push(`/listing/${booking.listing.id}`)
+                              }
                             >
                               View Details
                             </Button>

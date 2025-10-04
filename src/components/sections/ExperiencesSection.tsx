@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { ExperienceCard, Experience } from '@/components/ui/ExperienceCard';
 import { ExperienceCardSkeleton } from '@/components/ui/ExperienceCardSkeleton';
 import { Button } from '@/components/ui/Button';
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 export const ExperiencesSection: React.FC = () => {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,6 +61,20 @@ export const ExperiencesSection: React.FC = () => {
     // TODO: Implement share functionality
   };
 
+  // Determine which experiences to display (always max 6 on main page)
+  const getDisplayedExperiences = () => {
+    return experiences.slice(0, 6);
+  };
+
+  // Determine if we should show the "More experiences" button
+  const shouldShowMoreButton = () => {
+    return experiences.length > 6;
+  };
+
+  const handleMoreExperiences = () => {
+    router.push('/experiences');
+  };
+
   const handleLoadMore = () => {
     // Navigate to experiences page
     window.location.href = '/experiences';
@@ -85,12 +101,12 @@ export const ExperiencesSection: React.FC = () => {
           </div>
 
           {/* Experiences Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            {isLoading ? (
-              // Show skeleton loaders while loading
-              Array.from({ length: 6 }).map((_, index) => (
-                <ExperienceCardSkeleton key={index} />
-              ))
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12 items-stretch">
+            {isLoading
+              ? // Show skeleton loaders while loading
+                Array.from({ length: 6 }).map((_, index) => (
+                  <ExperienceCardSkeleton key={index} />
+                ))
             ) : error ? (
               // Show error state
               <div className="col-span-full text-center py-12">
@@ -111,25 +127,24 @@ export const ExperiencesSection: React.FC = () => {
                   View All Experiences
                 </Button>
               </div>
-            ) : (
-              // Show actual experience cards
-              experiences.map((experience, index) => (
-                <motion.div
-                  key={experience.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                >
-                  <ExperienceCard
-                    experience={experience}
-                    onViewDetails={() => handleViewDetails(experience.id)}
-                    onBookNow={() => handleBookNow(experience.id)}
-                    onToggleFavorite={() => handleToggleFavorite(experience.id)}
-                    onShare={() => handleShare(experience.id)}
-                  />
-                </motion.div>
-              ))
-            )}
+              : // Show actual experience cards
+                getDisplayedExperiences().map((experience, index) => (
+                  <motion.div
+                    key={experience.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    className="h-full"
+                  >
+                    <ExperienceCard
+                      experience={experience}
+                      onViewDetails={() => handleViewDetails(experience.id)}
+                      onBookNow={() => handleBookNow(experience.id)}
+                      onToggleFavorite={() => handleToggleFavorite(experience.id)}
+                      onShare={() => handleShare(experience.id)}
+                    />
+                  </motion.div>
+                ))}
           </div>
 
           {/* Load More Button */}

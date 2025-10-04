@@ -44,7 +44,9 @@ export const HeroSection: React.FC = () => {
               <span className="block">Experiences</span>
             </h1>
             <p className="text-lg md:text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-              From vibrant nightlife to cultural immersion, discover handpicked experiences that showcase the best of Nigeria with luxury and safety guaranteed.
+              From vibrant nightlife to cultural immersion, discover handpicked
+              experiences that showcase the best of Nigeria with luxury and
+              safety guaranteed.
             </p>
           </motion.div>
 
@@ -78,30 +80,33 @@ export const HeroSection: React.FC = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="space-y-8"
+            className="bg-gray-50 rounded-2xl p-6"
           >
-            {/* Category Filters */}
-            <div className="bg-gray-50 rounded-2xl p-6">
-              <CategoryFilter
-                categories={categories}
-                activeCategory={activeCategory}
-                onCategoryChange={setActiveCategory}
-                className="justify-center flex-wrap"
-              />
-            </div>
-
-            {/* Results Count and Sort */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div className="text-sm text-gray-600 font-medium">
-                6 experiences found
+            {/* Two-row layout: Category filters on top, results/sort on bottom */}
+            <div className="space-y-6">
+              {/* Top Row: Category Filters with horizontal scroll */}
+              <div className="w-full">
+                <CategoryFilter
+                  categories={categories}
+                  activeCategory={activeCategory}
+                  onCategoryChange={setActiveCategory}
+                  className="justify-start flex-nowrap overflow-x-auto scrollbar-hide"
+                />
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-600">Sort by:</span>
+
+              {/* Bottom Row: Results count and Sort dropdown evenly spaced */}
+              <div className="flex items-center justify-between">
+                {/* Results Count */}
+                <div className="text-sm text-gray-600 font-medium whitespace-nowrap">
+                  6 experiences found
+                </div>
+
+                {/* Sort Dropdown */}
                 <Select
                   options={sortOptions}
                   value={sortBy}
                   onChange={setSortBy}
-                  className="w-44"
+                  className="w-40"
                 />
               </div>
             </div>
