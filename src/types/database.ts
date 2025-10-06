@@ -1,4 +1,46 @@
 // Database types for Supabase
+
+// Enum for item types
+export enum ServiceType {
+  accommodation = 'accommodation',
+  airport_transfer = 'airport_transfer',
+  transportation = 'transportation',
+  security = 'security',
+  excursions = 'excursions',
+  night_life = 'night_life',
+  dining = 'dining',
+  culture = 'culture',
+  beach_resort = 'beach_resort',
+  culinary = 'culinary',
+  art_fashion = 'art_fashion',
+  adventure = 'adventure',
+  wellness = 'wellness',
+  live_events = 'live_events',
+  local_experiences = 'local_experiences',
+  festivals = 'festivals',
+  attractions = 'attractions',
+}
+export const serviceTypeToLabel: Record<ServiceType, string> = {
+  accommodation: 'Accommodation',
+  airport_transfer: 'Airport Transfer',
+  transportation: 'Transportation',
+  security: 'Security',
+  excursions: 'Tours & Excursions',
+  night_life: 'Night Life',
+  dining: 'Dining',
+  culture: 'Culture',
+  beach_resort: 'Beach Resort',
+  culinary: 'Culinary',
+  art_fashion: 'Art & Fashion',
+  adventure: 'Adventure',
+  wellness: 'Wellness',
+  live_events: 'Live Events',
+  local_experiences: 'Local Experiences',
+  festivals: 'Festivals',
+  attractions: 'Attractions',
+}
+
+
 export interface Database {
   public: {
     Tables: {

@@ -1,549 +1,258 @@
-import { supabase, createServerClient } from '@/lib/supabase';
+import { createServerClient } from '@/lib/supabase';
 import { Database } from '@/types/database';
-import { PackageCategory, CurrencyEnum } from '@/lib/supabase';
-import { CacheService, CacheKeys, CacheTags } from './cache';
+import { PackageFilters } from '@/lib/validations/packages';
+import { CacheService, CacheKeys, CacheTags } from '@/lib/services/cache';
 
-type Package = Database['public']['Tables']['packages']['Row'];
-type PackageInsert = Database['public']['Tables']['packages']['Insert'];
-type PackageUpdate = Database['public']['Tables']['packages']['Update'];
+export type Package = Database['public']['Tables']['packages']['Row'];
 
-export interface PackageFilters {
-  destination_id?: string;
-  category?: PackageCategory;
-  featured?: boolean;
-  luxury_certified?: boolean;
-  isPublished?: boolean;
-  minPrice?: number;
-  maxPrice?: number;
-  minRating?: number;
-  currency?: CurrencyEnum;
+export interface PackageListResponse {
+  data: Package[];
+  pagination: {
+    total: number;
+    hasMore: boolean;
+    limit: number;
+    offset: number;
+  };
 }
 
-export interface PackageSortOptions {
-  field: 'created_at' | 'title' | 'base_price' | 'avg_rating' | 'review_count';
-  order: 'asc' | 'desc';
+export interface PackageWithRelations extends Package {
+  destination?: {
+    id: string;
+    name: string;
+    country: string;
+    image_cover_url: string | null;
+  };
+  experiences?: Array<{
+    id: string;
+    experience_id: string;
+    is_optional: boolean;
+    is_included_in_price: boolean;
+    sort_order: number;
+    experience: {
+      id: string;
+      title: string;
+      description: string;
+      price_per_person: number;
+      duration_hours: number;
+      location: string;
+      category: string;
+      image_urls: string[];
+    };
+  }>;
+  option_mappings?: Array<{
+    id: string;
+    option_id: string;
+    package_item_option: {
+      id: string;
+      name: string;
+      description: string | null;
+      price: number;
+      package_item_id: string;
+      is_active: boolean | null;
+    };
+  }>;
 }
 
 export class PackageService {
-  /**
-   * Get all packages with optional filtering and sorting (public - only published)
-   */
-  static async getPackages(
-    filters?: PackageFilters,
-    sort?: PackageSortOptions,
-    limit?: number
-  ) {
-    const cacheKey = CacheKeys.packages.all(filters, sort, limit);
-    
+  private static client = createServerClient();
+
+  // Get all packages with filters and caching
+  static async getPackages(filters: Partial<PackageFilters> = {}): Promise<PackageListResponse> {
+    const {
+      destination_id,
+      search,
+      category,
+      featured,
+      is_published,
+      min_price,
+      max_price,
+      sort_by = 'created_at',
+      sort_order = 'desc',
+      limit = 50,
+      offset = 0,
+    } = filters;
+
+    // Create cache key
+    const cacheKey = CacheKeys.packages.all(filters, undefined, limit);
+
     return CacheService.getOrSet(
       cacheKey,
       async () => {
-        // Use service role client for public queries to bypass RLS
-        // This prevents circular dependency issues with RLS policies
-        const serverClient = createServerClient();
-        
-        let query = serverClient
+        let query = this.client
           .from('packages')
-          .select(`
-            *,
-            destinations (
-              id,
-              name,
-              slug,
-              country,
-              region,
-              image_cover_url
-            ),
-            partners!packages_lead_partner_id_fkey (
-              id,
-              name,
-              logo_url,
-              rating
-            )
-          `)
-          .eq('is_published', true);
+          .select('*', { count: 'exact' })
+          .range(offset, offset + limit - 1);
 
         // Apply filters
-        if (filters) {
-          if (filters.destination_id) {
-            query = query.eq('destination_id', filters.destination_id);
-          }
-          if (filters.category) {
-            query = query.eq('category', filters.category);
-          }
-          if (filters.featured !== undefined) {
-            query = query.eq('featured', filters.featured);
-          }
-          if (filters.luxury_certified !== undefined) {
-            query = query.eq('luxury_certified', filters.luxury_certified);
-          }
-          if (filters.isPublished !== undefined) {
-            query = query.eq('is_published', filters.isPublished);
-          }
-          if (filters.minPrice !== undefined) {
-            query = query.gte('base_price', filters.minPrice);
-          }
-          if (filters.maxPrice !== undefined) {
-            query = query.lte('base_price', filters.maxPrice);
-          }
-          if (filters.minRating !== undefined) {
-            query = query.gte('avg_rating', filters.minRating);
-          }
-          if (filters.currency) {
-            query = query.eq('currency', filters.currency);
-          }
+        if (destination_id) {
+          query = query.eq('destination_id', destination_id);
+        }
+        if (search) {
+          query = query.or(`title.ilike.%${search}%,summary.ilike.%${search}%,description.ilike.%${search}%`);
+        }
+        if (category) {
+          query = query.eq('category', category);
+        }
+        if (featured !== undefined) {
+          query = query.eq('featured', featured);
+        }
+        if (is_published !== undefined) {
+          query = query.eq('is_published', is_published);
+        }
+        if (min_price !== undefined) {
+          query = query.gte('base_price', min_price);
+        }
+        if (max_price !== undefined) {
+          query = query.lte('base_price', max_price);
         }
 
         // Apply sorting
-        if (sort) {
-          query = query.order(sort.field, { ascending: sort.order === 'asc' });
-        } else {
-          query = query.order('created_at', { ascending: false });
-        }
+        query = query.order(sort_by, { ascending: sort_order === 'asc' });
 
-        // Apply limit
-        if (limit) {
-          query = query.limit(limit);
-        }
-
-        const { data, error } = await query;
+        const { data, error, count } = await query;
 
         if (error) {
           throw new Error(`Failed to fetch packages: ${error.message}`);
         }
 
-        return { data, error: null };
+        return {
+          data: data || [],
+          pagination: {
+            total: count || 0,
+            hasMore: (offset + limit) < (count || 0),
+            limit,
+            offset,
+          },
+        };
       },
       {
-        ttl: 1800, // 30 minutes
+        ttl: 300, // 5 minutes
         tags: [CacheTags.packages],
       }
     );
   }
 
-  /**
-   * Get all packages for admin operations (includes unpublished packages)
-   */
-  static async getPackagesForAdmin(
-    filters?: PackageFilters,
-    sort?: PackageSortOptions,
-    limit?: number
-  ) {
-    const cacheKey = CacheKeys.packages.all({ ...filters, admin: true }, sort, limit);
-    
-    return CacheService.getOrSet(
-      cacheKey,
-      async () => {
-        // Use service role client to bypass RLS for admin queries
-        const serverClient = createServerClient();
-        
-        let query = serverClient
-          .from('packages')
-          .select(`
-            *,
-            destinations (
-              id,
-              name,
-              slug,
-              country,
-              region,
-              image_cover_url
-            ),
-            partners!packages_lead_partner_id_fkey (
-              id,
-              name,
-              logo_url,
-              rating
-            )
-          `);
-          // Note: No .eq('is_published', true) for admin operations
-
-        // Apply filters
-        if (filters) {
-          if (filters.destination_id) {
-            query = query.eq('destination_id', filters.destination_id);
-          }
-          if (filters.category) {
-            query = query.eq('category', filters.category);
-          }
-          if (filters.featured !== undefined) {
-            query = query.eq('featured', filters.featured);
-          }
-          if (filters.luxury_certified !== undefined) {
-            query = query.eq('luxury_certified', filters.luxury_certified);
-          }
-          if (filters.isPublished !== undefined) {
-            query = query.eq('is_published', filters.isPublished);
-          }
-          if (filters.minPrice !== undefined) {
-            query = query.gte('base_price', filters.minPrice);
-          }
-          if (filters.maxPrice !== undefined) {
-            query = query.lte('base_price', filters.maxPrice);
-          }
-          if (filters.minRating !== undefined) {
-            query = query.gte('avg_rating', filters.minRating);
-          }
-          if (filters.currency) {
-            query = query.eq('currency', filters.currency);
-          }
-        }
-
-        // Apply sorting
-        if (sort) {
-          query = query.order(sort.field, { ascending: sort.order === 'asc' });
-        } else {
-          query = query.order('created_at', { ascending: false });
-        }
-
-        // Apply limit
-        if (limit) {
-          query = query.limit(limit);
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
-          throw new Error(`Failed to fetch packages: ${error.message}`);
-        }
-
-        return { data, error: null };
-      },
-      {
-        ttl: 300, // 5 minutes for admin queries (shorter cache)
-        tags: [CacheTags.packages],
-      }
-    );
-  }
-
-  /**
-   * Get a single package by ID with full details
-   */
-  static async getPackageById(id: string) {
+  // Get package by ID with caching
+  static async getPackageById(id: string): Promise<Package | null> {
     const cacheKey = CacheKeys.packages.byId(id);
-    
+
     return CacheService.getOrSet(
       cacheKey,
       async () => {
-        const { data, error } = await supabase
+        const { data, error } = await this.client
           .from('packages')
-          .select(`
-            *,
-            destinations (
-              id,
-              name,
-              slug,
-              description,
-              country,
-              region,
-              image_cover_url,
-              image_gallery
-            ),
-            partners!packages_lead_partner_id_fkey (
-              id,
-              name,
-              type,
-              logo_url,
-              website,
-              contact_email,
-              contact_phone,
-              rating
-            ),
-            package_partner_services (
-              id,
-              partner_id,
-              item_type,
-              role,
-              is_included,
-              usd_price_override,
-              capacity_per_day,
-              service_window,
-              notes,
-              partners (
-                id,
-                name,
-                logo_url,
-                rating
-              )
-            )
-          `)
+          .select('*')
           .eq('id', id)
-          .eq('is_published', true)
           .single();
 
         if (error) {
+          if (error.code === 'PGRST116') {
+            return null; // Not found
+          }
           throw new Error(`Failed to fetch package: ${error.message}`);
         }
 
-        return { data, error: null };
+        return data;
       },
       {
-        ttl: 3600, // 1 hour
+        ttl: 600, // 10 minutes
         tags: [CacheTags.packages],
       }
     );
   }
 
-  /**
-   * Get package by slug
-   */
-  static async getPackageBySlug(slug: string) {
-    const { data, error } = await supabase
-      .from('packages')
-      .select(`
-        *,
-        destinations (
-          id,
-          name,
-          slug,
-          description,
-          country,
-          region,
-          image_cover_url,
-          image_gallery
-        ),
-        partners!packages_lead_partner_id_fkey (
-          id,
-          name,
-          type,
-          logo_url,
-          website,
-          contact_email,
-          contact_phone,
-          rating
-        )
-      `)
-      .eq('slug', slug)
-      .eq('is_published', true)
-      .single();
+  // Get packages by destination with caching
+  static async getPackagesByDestination(destinationId: string): Promise<Package[]> {
+    const cacheKey = CacheKeys.packages.byDestination(destinationId);
 
-    if (error) {
-      throw new Error(`Failed to fetch package by slug: ${error.message}`);
-    }
-
-    return { data, error: null };
-  }
-
-  /**
-   * Get featured packages
-   */
-  static async getFeaturedPackages(limit: number = 6) {
-    const cacheKey = CacheKeys.packages.featured(limit);
-    
     return CacheService.getOrSet(
       cacheKey,
       async () => {
-        return this.getPackages(
-          { featured: true },
-          { field: 'avg_rating', order: 'desc' },
-          limit
-        );
+        const { data, error } = await this.client
+          .from('packages')
+          .select('*')
+          .eq('destination_id', destinationId)
+          .eq('is_published', true)
+          .order('title', { ascending: true });
+
+        if (error) {
+          throw new Error(`Failed to fetch packages by destination: ${error.message}`);
+        }
+
+        return data || [];
       },
       {
-        ttl: 1800, // 30 minutes
+        ttl: 600, // 10 minutes
         tags: [CacheTags.packages],
       }
     );
   }
 
-  /**
-   * Get packages by destination
-   */
-  static async getPackagesByDestination(destinationId: string, limit?: number) {
-    return this.getPackages(
-      { destination_id: destinationId },
-      { field: 'base_price', order: 'asc' },
-      limit
-    );
-  }
+  // Get featured packages with caching
+  static async getFeaturedPackages(limit: number = 10): Promise<Package[]> {
+    const cacheKey = CacheKeys.packages.featured(limit);
 
-  /**
-   * Get packages by category
-   */
-  static async getPackagesByCategory(category: PackageCategory, limit?: number) {
-    return this.getPackages(
-      { category },
-      { field: 'avg_rating', order: 'desc' },
-      limit
-    );
-  }
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const { data, error } = await this.client
+          .from('packages')
+          .select('*')
+          .eq('featured', true)
+          .eq('is_published', true)
+          .order('created_at', { ascending: false })
+          .limit(limit);
 
-  /**
-   * Get luxury certified packages
-   */
-  static async getLuxuryPackages(limit?: number) {
-    return this.getPackages(
-      { luxury_certified: true },
-      { field: 'base_price', order: 'desc' },
-      limit
-    );
-  }
+        if (error) {
+          throw new Error(`Failed to fetch featured packages: ${error.message}`);
+        }
 
-  /**
-   * Search packages by title, description, or destination
-   */
-  static async searchPackages(searchTerm: string, limit?: number) {
-    const { data, error } = await supabase
-      .from('packages')
-      .select(`
-        *,
-        destinations (
-          id,
-          name,
-          slug,
-          country,
-          region,
-          image_cover_url
-        )
-      `)
-      .eq('is_published', true)
-      .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,summary.ilike.%${searchTerm}%`)
-      .order('avg_rating', { ascending: false })
-      .limit(limit || 20);
-
-    if (error) {
-      throw new Error(`Failed to search packages: ${error.message}`);
-    }
-
-    return { data, error: null };
-  }
-
-  /**
-   * Get package categories
-   */
-  static async getPackageCategories() {
-    const { data, error } = await supabase
-      .from('packages')
-      .select('category')
-      .eq('is_published', true)
-      .not('category', 'is', null);
-
-    if (error) {
-      throw new Error(`Failed to fetch categories: ${error.message}`);
-    }
-
-    // Get unique categories
-    const categories = Array.from(new Set((data as any).map((item: any) => item.category)));
-    return { data: categories, error: null };
-  }
-
-  /**
-   * Calculate package pricing with options
-   */
-  static async calculatePackagePricing(
-    packageId: string,
-    travelerCount: number,
-    selectedOptions?: string[]
-  ) {
-    const packageData = await this.getPackageById(packageId);
-    if (!packageData.data) {
-      throw new Error('Package not found');
-    }
-
-    const package_ = packageData.data;
-    let totalPrice = (package_ as any).base_price * travelerCount;
-
-    // Apply discount if available
-    if ((package_ as any).discount_percent && (package_ as any).discount_percent > 0) {
-      totalPrice = totalPrice * (1 - (package_ as any).discount_percent / 100);
-    }
-
-    // Add selected options pricing
-    if (selectedOptions && selectedOptions.length > 0) {
-      const { data: options, error } = await supabase
-        .from('package_option_mappings')
-        .select(`
-          option_id,
-          package_item_options (
-            id,
-            name,
-            price
-          )
-        `)
-        .eq('package_id', packageId)
-        .in('option_id', selectedOptions);
-
-      if (error) {
-        throw new Error(`Failed to fetch package options: ${error.message}`);
+        return data || [];
+      },
+      {
+        ttl: 600, // 10 minutes
+        tags: [CacheTags.packages],
       }
-
-      const optionsTotal = (options as any)?.reduce((sum: any, option: any) => {
-        const optionPrice = (option as any).package_item_options?.reduce((optSum: any, opt: any) => optSum + (opt.price || 0), 0) || 0;
-        return sum + optionPrice * travelerCount;
-      }, 0) || 0;
-
-      totalPrice += optionsTotal;
-    }
-
-    return {
-      basePrice: (package_ as any).base_price,
-      travelerCount,
-      subtotal: (package_ as any).base_price * travelerCount,
-      discountAmount: (package_ as any).discount_percent ? ((package_ as any).base_price * travelerCount * (package_ as any).discount_percent / 100) : 0,
-      optionsTotal: selectedOptions ? await this.calculateOptionsTotal(packageId, selectedOptions, travelerCount) : 0,
-      totalPrice,
-      currency: (package_ as any).currency
-    };
+    );
   }
 
-  /**
-   * Calculate options total
-   */
-  private static async calculateOptionsTotal(
-    packageId: string,
-    selectedOptions: string[],
-    travelerCount: number
-  ) {
-    const { data: options, error } = await supabase
-      .from('package_option_mappings')
-      .select(`
-        option_id,
-        package_item_options (
-          id,
-          name,
-          price
-        )
-      `)
-      .eq('package_id', packageId)
-      .in('option_id', selectedOptions);
-
-    if (error) {
-      throw new Error(`Failed to fetch package options: ${error.message}`);
-    }
-
-    return (options as any)?.reduce((sum: any, option: any) => {
-      const optionPrice = (option as any).package_item_options?.reduce((optSum: any, opt: any) => optSum + (opt.price || 0), 0) || 0;
-      return sum + optionPrice * travelerCount;
-    }, 0) || 0;
-  }
-
-  /**
-   * Create a new package (admin only)
-   */
-  static async createPackage(package_: PackageInsert) {
-    const { data, error } = await (supabase as any)
+  // Create package with cache invalidation
+  static async createPackage(pkg: Omit<Package, 'id' | 'created_at' | 'updated_at'>): Promise<Package> {
+    // Debug logging
+    console.log('PackageService.createPackage called with:', JSON.stringify(pkg, null, 2));
+    
+    const { data, error } = await this.client
       .from('packages')
-      .insert(package_)
+      .insert(pkg as any)
       .select()
       .single();
 
     if (error) {
+      console.error('Supabase error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       throw new Error(`Failed to create package: ${error.message}`);
     }
 
-    // Invalidate package cache
+    // Invalidate packages cache
     await CacheService.invalidateByTags([CacheTags.packages]);
+    // Also invalidate destinations cache since packages are related
+    await CacheService.invalidateByTags([CacheTags.destinations]);
 
-    return { data, error: null };
+    return data;
   }
 
-  /**
-   * Update a package (admin/staff only)
-   */
-  static async updatePackage(id: string, updates: PackageUpdate) {
-    const { data, error } = await (supabase as any)
+  // Update package with cache invalidation
+  static async updatePackage(id: string, updates: Partial<Package>): Promise<Package> {
+    const { data, error } = await (this.client as any)
       .from('packages')
-      .update(updates)
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', id)
       .select()
       .single();
@@ -552,120 +261,238 @@ export class PackageService {
       throw new Error(`Failed to update package: ${error.message}`);
     }
 
-    // Invalidate package cache
+    // Invalidate packages cache
     await CacheService.invalidateByTags([CacheTags.packages]);
+    // Also invalidate specific package cache
+    await CacheService.delete(CacheKeys.packages.byId(id));
 
-    return { data, error: null };
+    return data;
   }
 
-  /**
-   * Delete a package (super admin only - hard delete)
-   */
-  static async deletePackage(id: string) {
-    const { data, error } = await supabase
+  // Delete package with cache invalidation
+  static async deletePackage(id: string): Promise<void> {
+    const { error } = await this.client
       .from('packages')
       .delete()
-      .eq('id', id)
-      .select()
-      .single();
+      .eq('id', id);
 
     if (error) {
       throw new Error(`Failed to delete package: ${error.message}`);
     }
 
-    // Invalidate package cache
+    // Invalidate packages cache
     await CacheService.invalidateByTags([CacheTags.packages]);
-
-    return { data, error: null };
+    // Also invalidate specific package cache
+    await CacheService.delete(CacheKeys.packages.byId(id));
   }
 
-  /**
-   * Soft delete a package by setting is_published to false (admin/staff)
-   */
-  static async unpublishPackage(id: string) {
-    const { data, error } = await (supabase as any)
-      .from('packages')
-      .update({ is_published: false })
-      .eq('id', id)
-      .select()
-      .single();
+  // Search packages with caching
+  static async searchPackages(searchTerm: string): Promise<Package[]> {
+    const cacheKey = CacheKeys.packages.search(searchTerm);
 
-    if (error) {
-      throw new Error(`Failed to unpublish package: ${error.message}`);
-    }
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const { data, error } = await this.client
+          .from('packages')
+          .select('*')
+          .or(`title.ilike.%${searchTerm}%,summary.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
+          .order('title', { ascending: true });
 
-    // Invalidate package cache
-    await CacheService.invalidateByTags([CacheTags.packages]);
+        if (error) {
+          throw new Error(`Failed to search packages: ${error.message}`);
+        }
 
-    return { data, error: null };
-  }
-
-  /**
-   * Publish a package by setting is_published to true (admin/staff)
-   */
-  static async publishPackage(id: string) {
-    const { data, error } = await (supabase as any)
-      .from('packages')
-      .update({ is_published: true })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to publish package: ${error.message}`);
-    }
-
-    // Invalidate package cache
-    await CacheService.invalidateByTags([CacheTags.packages]);
-
-    return { data, error: null };
-  }
-
-  /**
-   * Update package rating and review count
-   */
-  static async updatePackageRating(packageId: string) {
-    const { data: reviews, error: reviewsError } = await supabase
-      .from('reviews')
-      .select('rating')
-      .eq('package_id', packageId);
-
-    if (reviewsError) {
-      throw new Error(`Failed to fetch reviews: ${reviewsError.message}`);
-    }
-
-    if (!reviews || reviews.length === 0) {
-      // No reviews, set to default values
-      const { data, error } = await (supabase as any)
-        .from('packages')
-        .update({ avg_rating: 0, review_count: 0 })
-        .eq('id', packageId)
-        .select()
-        .single();
-
-      if (error) {
-        throw new Error(`Failed to update package rating: ${error.message}`);
+        return data || [];
+      },
+      {
+        ttl: 300, // 5 minutes
+        tags: [CacheTags.packages],
       }
+    );
+  }
 
-      return { data, error: null };
-    }
+  // Get package by ID with relationships
+  static async getPackageWithRelations(id: string): Promise<PackageWithRelations | null> {
+    const cacheKey = `packages:with_relations:${id}`;
 
-    const avgRating = (reviews as any).reduce((sum: any, review: any) => sum + review.rating, 0) / (reviews as any).length;
-    const reviewCount = (reviews as any).length;
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        const { data, error } = await this.client
+          .from('packages')
+          .select(`
+            *,
+            destination:destinations(
+              id,
+              name,
+              country,
+              image_cover_url
+            ),
+            package_experiences(
+              id,
+              experience_id,
+              is_optional,
+              is_included_in_price,
+              sort_order,
+              experience:experiences(
+                id,
+                title,
+                description,
+                price_per_person,
+                duration_hours,
+                location,
+                category,
+                image_urls
+              )
+            ),
+            package_option_mappings(
+              id,
+              option_id,
+              package_item_option:package_item_options(
+                id,
+                name,
+                description,
+                price,
+                package_item_id,
+                is_active
+              )
+            )
+          `)
+          .eq('id', id)
+          .single();
 
-    const { data, error } = await (supabase as any)
-      .from('packages')
-      .update({ avg_rating: avgRating, review_count: reviewCount })
-      .eq('id', packageId)
-      .select()
-      .single();
+        if (error) {
+          if (error.code === 'PGRST116') {
+            return null; // Not found
+          }
+          throw new Error(`Failed to fetch package with relations: ${error.message}`);
+        }
 
-    if (error) {
-      throw new Error(`Failed to update package rating: ${error.message}`);
-    }
+        return {
+          ...(data as any),
+          experiences: (data as any).package_experiences || [],
+          option_mappings: (data as any).package_option_mappings || [],
+        } as PackageWithRelations;
+      },
+      {
+        ttl: 600, // 10 minutes
+        tags: [CacheTags.packages, CacheTags.packageExperiences, CacheTags.packageOptionMappings],
+      }
+    );
+  }
 
-    return { data, error: null };
+  // Get packages with relationships
+  static async getPackagesWithRelations(filters: Partial<PackageFilters> = {}): Promise<PackageWithRelations[]> {
+    const {
+      destination_id,
+      search,
+      category,
+      featured,
+      is_published,
+      min_price,
+      max_price,
+      sort_by = 'created_at',
+      sort_order = 'desc',
+      limit = 50,
+      offset = 0,
+    } = filters;
+
+    const cacheKey = `packages:with_relations:${JSON.stringify({ filters, limit, offset })}`;
+
+    return CacheService.getOrSet(
+      cacheKey,
+      async () => {
+        let query = this.client
+          .from('packages')
+          .select(`
+            *,
+            destination:destinations(
+              id,
+              name,
+              country,
+              image_cover_url
+            ),
+            package_experiences(
+              id,
+              experience_id,
+              is_optional,
+              is_included_in_price,
+              sort_order,
+              experience:experiences(
+                id,
+                title,
+                description,
+                price_per_person,
+                duration_hours,
+                location,
+                category,
+                image_urls
+              )
+            ),
+            package_option_mappings(
+              id,
+              option_id,
+              package_item_option:package_item_options(
+                id,
+                name,
+                description,
+                price,
+                package_item_id,
+                is_active
+              )
+            )
+          `)
+          .range(offset, offset + limit - 1);
+
+        // Apply filters
+        if (destination_id) {
+          query = query.eq('destination_id', destination_id);
+        }
+
+        if (search) {
+          query = query.or(`title.ilike.%${search}%,summary.ilike.%${search}%,description.ilike.%${search}%`);
+        }
+
+        if (category) {
+          query = query.eq('category', category);
+        }
+
+        if (featured !== undefined) {
+          query = query.eq('featured', featured);
+        }
+
+        if (is_published !== undefined) {
+          query = query.eq('is_published', is_published);
+        }
+
+        if (min_price !== undefined) {
+          query = query.gte('base_price', min_price);
+        }
+
+        if (max_price !== undefined) {
+          query = query.lte('base_price', max_price);
+        }
+
+        // Apply sorting
+        query = query.order(sort_by, { ascending: sort_order === 'asc' });
+
+        const { data, error } = await query;
+
+        if (error) {
+          throw new Error(`Failed to fetch packages with relations: ${error.message}`);
+        }
+
+        return (data || []).map(pkg => ({
+          ...(pkg as any),
+          experiences: (pkg as any).package_experiences || [],
+          option_mappings: (pkg as any).package_option_mappings || [],
+        })) as PackageWithRelations[];
+      },
+      {
+        ttl: 300, // 5 minutes
+        tags: [CacheTags.packages, CacheTags.packageExperiences, CacheTags.packageOptionMappings],
+      }
+    );
   }
 }
-
-export type { Package, PackageInsert, PackageUpdate };

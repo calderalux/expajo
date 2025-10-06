@@ -1,19 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Star, Users, Luggage } from 'lucide-react';
 import { TrustIndicator } from '@/components/ui/TrustIndicator';
 import { CategoryFilter } from '@/components/ui/CategoryFilter';
 import { Select } from '@/components/ui/Select';
+import { serviceTypeToLabel } from '@/types/database';
 
 const categories = [
   'All experiences',
-  'Nightlife',
-  'Culture',
-  'Beach resort',
-  'Culinary',
-  'Art & Fashion',
+  ...Object.values(serviceTypeToLabel),
 ];
 
 const sortOptions = [
@@ -27,6 +24,30 @@ const sortOptions = [
 export const HeroSection: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState('All experiences');
   const [sortBy, setSortBy] = useState('most-popular');
+  const [totalCount, setTotalCount] = useState(0);
+  const [isLoadingCount, setIsLoadingCount] = useState(true);
+
+  // Fetch total experiences count
+  useEffect(() => {
+    const fetchTotalCount = async () => {
+      try {
+        setIsLoadingCount(true);
+        const response = await fetch('/api/experiences/public?limit=1');
+        const result = await response.json();
+
+        if (result.success) {
+          setTotalCount(result.pagination?.total || 0);
+        }
+      } catch (error) {
+        console.error('Failed to fetch experiences count:', error);
+        setTotalCount(0);
+      } finally {
+        setIsLoadingCount(false);
+      }
+    };
+
+    fetchTotalCount();
+  }, []);
 
   return (
     <section className="bg-white py-12 lg:py-20">
@@ -82,32 +103,40 @@ export const HeroSection: React.FC = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="bg-gray-50 rounded-2xl p-6"
           >
-            {/* Single row layout: Category filters on left, results/sort on right */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              {/* Left Side: Category Filters */}
-              <div className="flex-1 min-w-0">
-                <CategoryFilter
-                  categories={categories}
-                  activeCategory={activeCategory}
-                  onCategoryChange={setActiveCategory}
-                  className="justify-start flex-wrap lg:flex-nowrap overflow-x-auto scrollbar-hide"
-                />
+            {/* Two row layout: Category filters on top, count/sort below */}
+            <div className="flex flex-col lg:flex-row justify-between gap-4">
+              {/* Top Row: Category Filters */}
+              <div className="lg:w-2/3">
+                <div className="overflow-x-auto scrollbar-hide">
+                  <CategoryFilter
+                    categories={categories}
+                    activeCategory={activeCategory}
+                    onCategoryChange={setActiveCategory}
+                    className="justify-center gap-1 flex-wrap min-w-max"
+                  />
+                </div>
               </div>
 
-              {/* Right Side: Results count and Sort dropdown */}
-              <div className="flex items-center gap-4 flex-shrink-0">
+              {/* Bottom Row: Results count and Sort dropdown */}
+              <div className="flex items-center justify-center lg:justify-end gap-4">
                 {/* Results Count */}
                 <div className="text-sm text-gray-600 font-medium whitespace-nowrap">
-                  6 experiences found
+                  {isLoadingCount ? (
+                    <span className="animate-pulse">Loading...</span>
+                  ) : (
+                    `${totalCount} experiences found`
+                  )}
                 </div>
 
-                {/* Sort Dropdown */}
-                <Select
-                  options={sortOptions}
-                  value={sortBy}
-                  onChange={setSortBy}
-                  className="w-40"
-                />
+                <div>
+                  {/* Sort Dropdown */}
+                  <Select
+                    options={sortOptions}
+                    value={sortBy}
+                    onChange={setSortBy}
+                    className="w-40 rounded-full"
+                  />
+                </div>
               </div>
             </div>
           </motion.div>

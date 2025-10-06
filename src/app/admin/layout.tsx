@@ -16,6 +16,7 @@ export default function AdminLayout({
     if (pathname === '/admin/destinations') return 'destinations';
     if (pathname === '/admin/experiences') return 'experiences';
     if (pathname === '/admin/packages') return 'packages';
+    if (pathname === '/admin/package-items') return 'package-items';
     if (pathname === '/admin/bookings') return 'bookings';
     if (pathname === '/admin/users') return 'users';
     if (pathname === '/admin/settings') return 'settings';

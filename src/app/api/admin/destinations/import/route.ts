@@ -3,16 +3,8 @@ import { createServerClient } from '@/lib/supabase';
 import { CacheService } from '@/lib/services/cache';
 import { checkAdminAuth } from '@/lib/middleware/auth';
 import { createDestinationSchema } from '@/lib/validations/destinations';
-
-// Auto-generate slug from name
-const generateSlug = (name: string): string => {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9\s\-]/g, '') // Remove special characters
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Replace multiple hyphens with single
-    .trim();
-};
+import { parseImportFileServer } from '@/lib/utils/file-parser-server';
+import { generateSlug } from '@/lib/validations/destinations';
 
 // Cache tags for destinations
 const DESTINATION_CACHE_TAGS = {
@@ -23,7 +15,22 @@ const DESTINATION_CACHE_TAGS = {
   COUNTRY: 'destinations:country',
 };
 
-// POST /api/admin/destinations/import - Import destinations from CSV/JSON
+interface ImportResult {
+  success: boolean;
+  totalRows: number;
+  processedRows: number;
+  successfulImports: number;
+  failedImports: number;
+  errors: Array<{
+    row: number;
+    field?: string;
+    message: string;
+    data?: any;
+  }>;
+  importedDestinations: any[];
+}
+
+// POST /api/admin/destinations/import - Import destinations from file
 export async function POST(req: NextRequest) {
   try {
     const authCheck = await checkAdminAuth(req);
@@ -33,6 +40,8 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     const file = formData.get('file') as File;
+    const fileType = formData.get('fileType') as string;
+    const options = JSON.parse(formData.get('options') as string || '{}');
 
     if (!file) {
       return NextResponse.json(
@@ -41,172 +50,236 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const fileContent = await file.text();
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-
-    let destinations: any[] = [];
-
-    if (fileExtension === 'csv') {
-      // Parse CSV
-      const lines = fileContent.split('\n');
-      const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
-      
-      destinations = lines.slice(1)
-        .filter(line => line.trim())
-        .map(line => {
-          const values = line.split(',').map(v => v.replace(/"/g, '').trim());
-          const destination: any = {};
-          
-          headers.forEach((header, index) => {
-            const value = values[index] || '';
-            
-            switch (header.toLowerCase()) {
-              case 'id':
-                // Skip ID field as it's auto-generated
-                break;
-              case 'name':
-                destination.name = value;
-                break;
-              case 'slug':
-                destination.slug = value;
-                break;
-              case 'description':
-                destination.description = value;
-                break;
-              case 'country':
-                destination.country = value;
-                break;
-              case 'country code':
-                destination.country_code = value;
-                break;
-              case 'region':
-                destination.region = value;
-                break;
-              case 'image cover url':
-                destination.image_cover_url = value;
-                break;
-              case 'image gallery':
-                try {
-                  destination.image_gallery = value ? JSON.parse(value) : [];
-                } catch {
-                  destination.image_gallery = [];
-                }
-                break;
-              case 'highlights':
-                try {
-                  destination.highlights = value ? JSON.parse(value) : [];
-                } catch {
-                  destination.highlights = [];
-                }
-                break;
-              case 'best time to visit':
-                destination.best_time_to_visit = value;
-                break;
-              case 'climate':
-                destination.climate = value;
-                break;
-              case 'language':
-                destination.language = value;
-                break;
-              case 'currency':
-                destination.currency = value;
-                break;
-              case 'featured':
-                destination.featured = value.toLowerCase() === 'yes';
-                break;
-              case 'published':
-                destination.is_published = value.toLowerCase() === 'yes';
-                break;
-            }
-          });
-          
-          return destination;
-        });
-    } else if (fileExtension === 'json') {
-      // Parse JSON and remove id fields
-      const rawDestinations = JSON.parse(fileContent);
-      destinations = rawDestinations.map((dest: any) => {
-        const { id, ...destinationData } = dest;
-        return destinationData;
-      });
-    } else {
+    // Validate file type
+    const allowedTypes = ['json', 'csv', 'xlsx'];
+    if (!allowedTypes.includes(fileType)) {
       return NextResponse.json(
-        { success: false, error: 'Unsupported file format. Please use CSV or JSON.' },
+        { success: false, error: 'Invalid file type. Supported formats: JSON, CSV, XLSX' },
         { status: 400 }
       );
     }
 
-    if (destinations.length === 0) {
+    // Parse the file
+    const parseResult = await parseImportFileServer(file, fileType);
+    if (!parseResult.success) {
       return NextResponse.json(
-        { success: false, error: 'No destinations found in file' },
+        { success: false, error: parseResult.error },
         { status: 400 }
       );
     }
 
-    const serverClient = createServerClient();
-    const results = {
-      success: 0,
-      failed: 0,
-      errors: [] as string[],
-    };
-
-    // Process each destination
-    for (let i = 0; i < destinations.length; i++) {
-      try {
-        const destination = destinations[i];
-        
-        // Validate destination data
-        const validation = createDestinationSchema.safeParse(destination);
-        if (!validation.success) {
-          results.failed++;
-          results.errors.push(`Row ${i + 1}: ${validation.error.errors.map(e => e.message).join(', ')}`);
-          continue;
-        }
-
-        // Auto-generate slug if not provided
-        const destinationData = {
-          ...validation.data,
-          slug: validation.data.slug || generateSlug(validation.data.name),
-        };
-
-        // Insert destination (id is auto-generated, so we don't include it)
-        const { data: insertData, error } = await serverClient
-          .from('destinations')
-          .insert(destinationData as any)
-          .select();
-
-        if (error) {
-          console.error(`Database error for destination ${i + 1}:`, error.message);
-          results.failed++;
-          results.errors.push(`Row ${i + 1}: ${error.message}`);
-        } else {
-          results.success++;
-        }
-      } catch (err: any) {
-        console.error(`Exception for destination ${i + 1}:`, err.message);
-        results.failed++;
-        results.errors.push(`Row ${i + 1}: ${err.message}`);
-      }
+    const rawData = parseResult.data;
+    if (!Array.isArray(rawData) || rawData.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'File contains no valid data or is not an array' },
+        { status: 400 }
+      );
     }
 
-    // Invalidate destination caches
-    await CacheService.invalidateByTags([
-      DESTINATION_CACHE_TAGS.LIST,
-      DESTINATION_CACHE_TAGS.SEARCH,
-      DESTINATION_CACHE_TAGS.FEATURED,
-      DESTINATION_CACHE_TAGS.COUNTRY,
-    ]);
+    // Process the data
+    const importResult = await processDestinationsImport(
+      rawData,
+      authCheck.user?.id,
+      options
+    );
+
+    // Invalidate cache after successful import
+    if (importResult.successfulImports > 0) {
+      await CacheService.invalidateByTags([DESTINATION_CACHE_TAGS.LIST, DESTINATION_CACHE_TAGS.FEATURED, DESTINATION_CACHE_TAGS.COUNTRY]);
+    }
 
     return NextResponse.json({
       success: true,
-      message: `Import completed: ${results.success} successful, ${results.failed} failed`,
-      results,
+      data: importResult,
     });
-  } catch (error) {
-    console.error('Import error:', error);
+  } catch (error: any) {
+    console.error('Error importing destinations:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, error: error.message },
       { status: 500 }
     );
   }
+}
+
+async function processDestinationsImport(
+  rawData: any[],
+  userId: string,
+  options: any
+): Promise<ImportResult> {
+  const result: ImportResult = {
+    success: true,
+    totalRows: rawData.length,
+    processedRows: 0,
+    successfulImports: 0,
+    failedImports: 0,
+    errors: [],
+    importedDestinations: [],
+  };
+
+  const serverClient = createServerClient();
+  const batchSize = 10; // Process in batches to avoid overwhelming the database
+
+  for (let i = 0; i < rawData.length; i += batchSize) {
+    const batch = rawData.slice(i, i + batchSize);
+    
+    for (let j = 0; j < batch.length; j++) {
+      const rowIndex = i + j + 1; // 1-based row numbering
+      const rowData = batch[j];
+      
+      try {
+        result.processedRows++;
+        
+        // Transform and validate the data
+        const transformedData = transformDestinationData(rowData, options);
+        const validationResult = createDestinationSchema.safeParse(transformedData);
+        
+        if (!validationResult.success) {
+          result.failedImports++;
+          result.errors.push({
+            row: rowIndex,
+            message: `Validation failed: ${validationResult.error.errors.map(e => e.message).join(', ')}`,
+            data: rowData,
+          });
+          continue;
+        }
+
+        // Check for duplicates (by name and country)
+        const { data: existing } = await serverClient
+          .from('destinations')
+          .select('id')
+          .eq('name', transformedData.name)
+          .eq('country', transformedData.country)
+          .single();
+
+        if (existing) {
+          if (options.skipDuplicates) {
+            result.errors.push({
+              row: rowIndex,
+              message: `Skipped duplicate: ${transformedData.name}, ${transformedData.country}`,
+              data: rowData,
+            });
+            continue;
+          } else {
+            result.failedImports++;
+            result.errors.push({
+              row: rowIndex,
+              message: `Duplicate destination found: ${transformedData.name}, ${transformedData.country}`,
+              data: rowData,
+            });
+            continue;
+          }
+        }
+
+        // Insert the destination
+        const insertData = {
+          ...validationResult.data,
+          slug: generateSlug(transformedData.name),
+          created_by: userId,
+        };
+        
+        const { data: newDestination, error: insertError } = await serverClient
+          .from('destinations')
+          .insert(insertData as any)
+          .select()
+          .single();
+
+        if (insertError) {
+          result.failedImports++;
+          result.errors.push({
+            row: rowIndex,
+            message: `Database error: ${insertError.message}`,
+            data: rowData,
+          });
+          continue;
+        }
+
+        result.successfulImports++;
+        result.importedDestinations.push(newDestination);
+        
+      } catch (error: any) {
+        result.failedImports++;
+        result.errors.push({
+          row: rowIndex,
+          message: `Processing error: ${error.message}`,
+          data: rowData,
+        });
+      }
+    }
+  }
+
+  return result;
+}
+
+function transformDestinationData(rowData: any, options: any): any {
+  // Handle different column naming conventions
+  const fieldMappings = {
+    name: ['name', 'title', 'destination_name', 'location_name'],
+    description: ['description', 'desc', 'summary', 'overview'],
+    country: ['country', 'nation', 'country_name'],
+    country_code: ['country_code', 'countryCode', 'iso_code', 'iso'],
+    region: ['region', 'state', 'province', 'area'],
+    image_cover_url: ['image_cover_url', 'imageUrl', 'cover_image', 'main_image', 'image'],
+    best_time_to_visit: ['best_time_to_visit', 'bestTime', 'season', 'when_to_visit'],
+    climate: ['climate', 'weather', 'temperature'],
+    language: ['language', 'languages', 'spoken_language'],
+    currency: ['currency', 'money', 'currency_code'],
+    featured: ['featured', 'is_featured', 'highlight', 'promoted'],
+    is_published: ['is_published', 'published', 'active', 'status'],
+    highlights: ['highlights', 'attractions', 'features', 'key_points'],
+    image_gallery: ['image_gallery', 'gallery', 'images', 'photo_gallery'],
+  };
+
+  const transformed: any = {};
+
+  // Map fields based on available mappings
+  Object.entries(fieldMappings).forEach(([targetField, possibleFields]) => {
+    for (const field of possibleFields) {
+      if (rowData[field] !== undefined && rowData[field] !== null && rowData[field] !== '') {
+        transformed[targetField] = rowData[field];
+        break;
+      }
+    }
+  });
+
+  // Apply default values from options
+  if (options.defaultValues) {
+    Object.entries(options.defaultValues).forEach(([key, value]) => {
+      if (transformed[key] === undefined || transformed[key] === null || transformed[key] === '') {
+        transformed[key] = value;
+      }
+    });
+  }
+
+  // Handle array fields
+  if (transformed.highlights && typeof transformed.highlights === 'string') {
+    transformed.highlights = transformed.highlights
+      .split(/[,;|]/)
+      .map((item: string) => item.trim())
+      .filter((item: string) => item.length > 0);
+  }
+
+  if (transformed.image_gallery && typeof transformed.image_gallery === 'string') {
+    transformed.image_gallery = transformed.image_gallery
+      .split(/[,;|]/)
+      .map((item: string) => item.trim())
+      .filter((item: string) => item.length > 0);
+  }
+
+  // Handle boolean fields
+  if (transformed.featured !== undefined) {
+    transformed.featured = Boolean(transformed.featured);
+  }
+  if (transformed.is_published !== undefined) {
+    transformed.is_published = Boolean(transformed.is_published);
+  }
+
+  // Ensure required fields have defaults
+  if (!transformed.name) {
+    throw new Error('Name is required');
+  }
+  if (!transformed.country) {
+    throw new Error('Country is required');
+  }
+
+  return transformed;
 }

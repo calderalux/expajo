@@ -44,22 +44,17 @@ export enum PaymentStatus {
 
 export enum PartnerStatus {
   PENDING = 'pending',
-  APPROVED = 'approved',
+  VERIFIED = 'verified',
   SUSPENDED = 'suspended',
-  REJECTED = 'rejected'
 }
 
 export enum MembershipTier {
   BASIC = 'basic',
-  PREMIUM = 'premium',
-  VIP = 'vip'
+  BLACK = 'black',
 }
 
 export enum CurrencyEnum {
   USD = 'USD',
-  NGN = 'NGN',
-  EUR = 'EUR',
-  GBP = 'GBP'
 }
 
 export enum PackageCategory {
@@ -72,11 +67,22 @@ export enum PackageCategory {
 }
 
 export enum ItemType {
-  ACCOMMODATION = 'accommodation',
-  TRANSPORTATION = 'transportation',
-  ACTIVITY = 'activity',
-  MEAL = 'meal',
-  GUIDE = 'guide',
-  EQUIPMENT = 'equipment'
+  accommodation = 'accommodation',
+  airport_transfer = 'airport_transfer',
+  transportation = 'transportation',
+  security = 'security',
+  excursions = 'excursions',
+  night_life = 'night_life',
+  dining = 'dining',
+  culture = 'culture',
+  beach_resort = 'beach_resort',
+  culinary = 'culinary',
+  art_fashion = 'art_fashion',
+  adventure = 'adventure',
+  wellness = 'wellness',
+  live_events = 'live_events',
+  local_experiences = 'local_experiences',
+  festivals = 'festivals',
+  attractions = 'attractions',
 }
 

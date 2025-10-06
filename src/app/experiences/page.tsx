@@ -15,6 +15,7 @@ import { CategoryFilter } from '@/components/ui/CategoryFilter';
 import { Search, Filter, MapPin, Star, Clock, Users } from 'lucide-react';
 import { Experience, ExperienceFilters } from '@/lib/services/experiences';
 import { motion } from 'framer-motion';
+import { serviceTypeToLabel } from '@/types/database';
 
 interface ExperienceListState {
   experiences: Experience[];
@@ -27,13 +28,7 @@ interface ExperienceListState {
 
 const categories = [
   'All experiences',
-  'Nightlife',
-  'Culture',
-  'Beach resort',
-  'Culinary',
-  'Art & Fashion',
-  'Adventure',
-  'Wellness',
+  ...Object.values(serviceTypeToLabel),
 ];
 
 const sortOptions = [

@@ -11,6 +11,8 @@ export interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   closeOnOverlayClick?: boolean;
   showCloseButton?: boolean;
+  className?: string;
+  maxHeight?: string;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -21,6 +23,8 @@ const Modal: React.FC<ModalProps> = ({
   size = 'md',
   closeOnOverlayClick = true,
   showCloseButton = true,
+  className,
+  maxHeight = '90vh',
 }) => {
   useEffect(() => {
     if (isOpen) {
@@ -65,14 +69,16 @@ const Modal: React.FC<ModalProps> = ({
       {/* Modal */}
       <div
         className={cn(
-          'relative w-full bg-white rounded-card shadow-xl',
-          sizes[size]
+          'relative w-full bg-white rounded-card shadow-xl flex flex-col',
+          sizes[size],
+          className
         )}
+        style={{ maxHeight }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
             {title && (
               <h2 className="text-xl font-semibold font-playfair">{title}</h2>
             )}
@@ -89,7 +95,7 @@ const Modal: React.FC<ModalProps> = ({
         )}
         
         {/* Content */}
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto">
           {children}
         </div>
       </div>

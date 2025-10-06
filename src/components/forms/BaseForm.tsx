@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useForm } from '@tanstack/react-form';
+import { zodValidator } from '@tanstack/zod-form-adapter';
+import { z } from 'zod';
 import { 
-  TextInput, 
-  Textarea, 
-  Select, 
-  Switch, 
   Button, 
   Group, 
   Stack, 
@@ -18,7 +17,10 @@ import {
   Box,
   NumberInput,
   ActionIcon,
-  TextInput as MantineTextInput
+  Switch,
+  TextInput,
+  Textarea,
+  Select
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconAlertCircle, IconCheck, IconX, IconPlus, IconTrash } from '@tabler/icons-react';
@@ -34,7 +36,7 @@ export interface FormFieldConfig {
   description?: string;
   options?: Array<{ value: string; label: string }>;
   gridSpan?: number;
-  validation?: any;
+  validation?: z.ZodSchema<any>;
   arrayConfig?: {
     itemType: 'text' | 'url';
     placeholder?: string;
@@ -60,7 +62,7 @@ export interface BaseFormProps<T = any> {
   actions: FormAction[];
   onSubmit: (values: T) => Promise<void> | void;
   initialValues?: Partial<T>;
-  schema?: any;
+  schema?: z.ZodSchema<T>;
   isLoading?: boolean;
   error?: string | null;
   className?: string;
@@ -80,251 +82,326 @@ export function BaseForm<T = any>({
   className
 }: BaseFormProps<T>) {
   const [loading, { open: startLoading, close: stopLoading }] = useDisclosure(false);
-  const [formData, setFormData] = useState<T>(initialValues as T);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [formError, setFormError] = useState<string | null>(error || null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    startLoading();
-    try {
-      await onSubmit(formData);
-    } catch (err) {
-      console.error('Form submission error:', err);
-    } finally {
-      stopLoading();
+  // Create default values object
+  const defaultValues = fields.reduce((acc, field) => {
+    const initialValue = initialValues[field.name as keyof T];
+    if (initialValue !== undefined) {
+      acc[field.name] = initialValue;
+    } else {
+      // Set default values based on field type
+      switch (field.type) {
+        case 'switch':
+          acc[field.name] = false;
+          break;
+        case 'number':
+          acc[field.name] = 0;
+          break;
+        case 'array':
+        case 'dynamicArray':
+          acc[field.name] = [];
+          break;
+        default:
+          acc[field.name] = '';
+      }
     }
-  };
+    return acc;
+  }, {} as Record<string, any>);
 
-  const handleFieldChange = (name: string, value: any) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear field error when user starts typing
-    if (fieldErrors[name]) {
-      setFieldErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
+  const form = useForm({
+    defaultValues,
+    onSubmit: async ({ value }) => {
+      startLoading();
+      setFormError(null);
+      try {
+        // Validate with schema if provided
+        if (schema) {
+          const validationResult = schema.safeParse(value);
+          if (!validationResult.success) {
+            const errors = validationResult.error.errors.map(err => 
+              `${err.path.join('.')}: ${err.message}`
+            ).join(', ');
+            setFormError(`Validation failed: ${errors}`);
+            return;
+          }
+          await onSubmit(validationResult.data as T);
+        } else {
+          await onSubmit(value as T);
+        }
+      } catch (err: any) {
+        setFormError(err.message || 'An unexpected error occurred');
+        console.error('Form submission error:', err);
+      } finally {
+        stopLoading();
+      }
+    },
+  });
+
+  // Update form error when prop changes
+  useEffect(() => {
+    setFormError(error || null);
+  }, [error]);
+
+  // Remove automatic validation on mount - let users interact first
 
   const renderField = (field: FormFieldConfig) => {
-    const fieldValue = formData[field.name as keyof T];
-    const fieldError = fieldErrors[field.name];
+    return (
+      <form.Field
+        key={field.name}
+        name={field.name}
+        validators={{
+          onChange: field.validation,
+          onBlur: field.validation,
+        }}
+      >
+        {(fieldState) => {
+          const hasError = fieldState.state.meta.errors.length > 0;
+          const errorMessage = hasError ? fieldState.state.meta.errors[0] : undefined;
+          const isTouched = fieldState.state.meta.isTouched;
+          
+          // Debug logging
+          if (hasError) {
+            console.log(`Field ${field.name} has error:`, fieldState.state.meta.errors);
+            console.log(`Field ${field.name} error message:`, errorMessage);
+            console.log(`Field ${field.name} is touched:`, isTouched);
+            console.log(`Form is submitted:`, form.state.isSubmitted);
+          }
+          
+          // Show errors if field has been touched OR if form has been submitted
+          const isFormSubmitted = form.state.isSubmitted;
+          const shouldShowError = hasError && (isTouched || isFormSubmitted);
+          
+          // Handle different error message types
+          let displayError = undefined;
+          if (shouldShowError) {
+            if (typeof errorMessage === 'string') {
+              displayError = errorMessage;
+            } else if (errorMessage && typeof errorMessage === 'object' && 'message' in errorMessage) {
+              displayError = (errorMessage as any).message;
+            } else {
+              displayError = 'Invalid input';
+            }
+          }
+          
+          const fieldProps = {
+            label: field.label,
+            placeholder: field.placeholder,
+            description: field.description,
+            required: field.required,
+            error: displayError,
+            // Add visual error state for Mantine components
+            errorProps: shouldShowError ? { color: 'red' } : undefined,
+          };
 
-    const fieldProps = {
-      label: field.label,
-      placeholder: field.placeholder,
-      description: field.description,
-      required: field.required,
-      error: fieldError,
-    };
-
-    switch (field.type) {
-      case 'text':
-        return (
-          <TextInput
-            key={field.name}
-            {...fieldProps}
-            value={fieldValue as string || ''}
-            onChange={(e) => handleFieldChange(field.name, e.target.value)}
-          />
-        );
-
-      case 'url':
-        return (
-          <TextInput
-            key={field.name}
-            {...fieldProps}
-            value={fieldValue as string || ''}
-            onChange={(e) => handleFieldChange(field.name, e.target.value)}
-            type="url"
-          />
-        );
-
-      case 'textarea':
-        return (
-          <Textarea
-            key={field.name}
-            {...fieldProps}
-            value={fieldValue as string || ''}
-            onChange={(e) => handleFieldChange(field.name, e.target.value)}
-            minRows={3}
-            maxRows={6}
-            autosize
-          />
-        );
-
-      case 'select':
-        return (
-          <Select
-            key={field.name}
-            {...fieldProps}
-            value={fieldValue as string || ''}
-            onChange={(value) => handleFieldChange(field.name, value)}
-            data={field.options || []}
-            searchable
-            clearable
-          />
-        );
-
-      case 'switch':
-        return (
-          <Switch
-            key={field.name}
-            {...fieldProps}
-            checked={fieldValue as boolean || false}
-            onChange={(e) => handleFieldChange(field.name, e.currentTarget.checked)}
-            label={field.label}
-            description={field.description}
-          />
-        );
-
-      case 'multiselect':
-        return (
-          <Select
-            key={field.name}
-            {...fieldProps}
-            value={fieldValue as any}
-            onChange={(value) => handleFieldChange(field.name, value)}
-            data={field.options || []}
-            multiple
-            searchable
-            clearable
-          />
-        );
-
-      case 'number':
-        return (
-          <NumberInput
-            key={field.name}
-            {...fieldProps}
-            value={fieldValue as number || 0}
-            onChange={(value) => handleFieldChange(field.name, value)}
-            min={0}
-            step={1}
-          />
-        );
-
-      case 'array':
-        return (
-          <Box key={field.name}>
-            <Text size="sm" fw={500} mb="xs">
-              {field.label}
-              {field.required && <span className="text-red-500 ml-1">*</span>}
-            </Text>
-            {field.description && (
-              <Text size="xs" c="dimmed" mb="sm">
-                {field.description}
-              </Text>
-            )}
-            <Stack gap="xs">
-              {(fieldValue as string[] || []).map((item, index) => (
-                <Group key={index} gap="xs">
-                  <MantineTextInput
-                    value={item}
-                    onChange={(e) => {
-                      const newArray = [...(fieldValue as string[] || [])];
-                      newArray[index] = e.target.value;
-                      handleFieldChange(field.name, newArray);
-                    }}
-                    placeholder={field.arrayConfig?.placeholder || 'Enter item'}
-                    className="flex-1"
-                  />
-                  <ActionIcon
-                    color="red"
-                    variant="subtle"
-                    onClick={() => {
-                      const newArray = (fieldValue as string[] || []).filter((_, i) => i !== index);
-                      handleFieldChange(field.name, newArray);
-                    }}
-                  >
-                    <IconTrash size={16} />
-                  </ActionIcon>
-                </Group>
-              ))}
-              {(!field.arrayConfig?.maxItems || (fieldValue as string[] || []).length < field.arrayConfig.maxItems) && (
-                <Button
-                  variant="light"
-                  size="sm"
-                  leftSection={<IconPlus size={16} />}
-                  onClick={() => {
-                    const newArray = [...(fieldValue as string[] || []), ''];
-                    handleFieldChange(field.name, newArray);
+          switch (field.type) {
+            case 'text':
+              return (
+                <TextInput
+                  {...fieldProps}
+                  value={fieldState.state.value || ''}
+                  onChange={(e) => {
+                    fieldState.handleChange(e.target.value);
+                    // Mark as touched and trigger validation
+                    fieldState.handleBlur();
+                    fieldState.validate('change');
                   }}
-                >
-                  {field.arrayConfig?.addButtonText || 'Add Item'}
-                </Button>
-              )}
-            </Stack>
-            {fieldError && (
-              <Text size="xs" c="red" mt="xs">
-                {fieldError}
-              </Text>
-            )}
-          </Box>
-        );
-
-      case 'dynamicArray':
-        return (
-          <Box key={field.name}>
-            <Text size="sm" fw={500} mb="xs">
-              {field.label}
-              {field.required && <span className="text-red-500 ml-1">*</span>}
-            </Text>
-            {field.description && (
-              <Text size="xs" c="dimmed" mb="sm">
-                {field.description}
-              </Text>
-            )}
-            <Stack gap="xs">
-              {(fieldValue as string[] || []).map((item, index) => (
-                <Group key={index} gap="xs">
-                  <MantineTextInput
-                    value={item}
-                    onChange={(e) => {
-                      const newArray = [...(fieldValue as string[] || [])];
-                      newArray[index] = e.target.value;
-                      handleFieldChange(field.name, newArray);
-                    }}
-                    placeholder={field.arrayConfig?.placeholder || 'Enter item'}
-                    className="flex-1"
-                  />
-                  <ActionIcon
-                    color="red"
-                    variant="subtle"
-                    onClick={() => {
-                      const newArray = (fieldValue as string[] || []).filter((_, i) => i !== index);
-                      handleFieldChange(field.name, newArray);
-                    }}
-                  >
-                    <IconTrash size={16} />
-                  </ActionIcon>
-                </Group>
-              ))}
-              {(!field.arrayConfig?.maxItems || (fieldValue as string[] || []).length < field.arrayConfig.maxItems) && (
-                <Button
-                  variant="light"
-                  size="sm"
-                  leftSection={<IconPlus size={16} />}
-                  onClick={() => {
-                    const newArray = [...(fieldValue as string[] || []), ''];
-                    handleFieldChange(field.name, newArray);
+                  onBlur={() => {
+                    fieldState.handleBlur();
+                    fieldState.validate('blur');
                   }}
-                >
-                  {field.arrayConfig?.addButtonText || 'Add Item'}
-                </Button>
-              )}
-            </Stack>
-            {fieldError && (
-              <Text size="xs" c="red" mt="xs">
-                {fieldError}
-              </Text>
-            )}
-          </Box>
-        );
+                />
+              );
 
-      default:
-        return null;
-    }
+            case 'url':
+              return (
+                <TextInput
+                  {...fieldProps}
+                  value={fieldState.state.value || ''}
+                  onChange={(e) => {
+                    fieldState.handleChange(e.target.value);
+                    fieldState.handleBlur();
+                    fieldState.validate('change');
+                  }}
+                  onBlur={() => {
+                    fieldState.handleBlur();
+                    fieldState.validate('blur');
+                  }}
+                  type="url"
+                />
+              );
+
+            case 'textarea':
+              return (
+                <Textarea
+                  {...fieldProps}
+                  value={fieldState.state.value || ''}
+                  onChange={(e) => {
+                    fieldState.handleChange(e.target.value);
+                    fieldState.handleBlur();
+                    fieldState.validate('change');
+                  }}
+                  onBlur={() => {
+                    fieldState.handleBlur();
+                    fieldState.validate('blur');
+                  }}
+                  minRows={3}
+                  maxRows={6}
+                  autosize
+                />
+              );
+
+            case 'select':
+              return (
+                <Select
+                  {...fieldProps}
+                  value={fieldState.state.value || ''}
+                  onChange={(value) => {
+                    fieldState.handleChange(value);
+                    fieldState.handleBlur();
+                    fieldState.validate('change');
+                  }}
+                  onBlur={() => {
+                    fieldState.handleBlur();
+                    fieldState.validate('blur');
+                  }}
+                  data={field.options || []}
+                  searchable
+                  clearable
+                />
+              );
+
+            case 'switch':
+              return (
+                <Switch
+                  {...fieldProps}
+                  checked={fieldState.state.value || false}
+                  onChange={(e) => {
+                    fieldState.handleChange(e.currentTarget.checked);
+                    fieldState.handleBlur();
+                    fieldState.validate('change');
+                  }}
+                  onBlur={() => {
+                    fieldState.handleBlur();
+                    fieldState.validate('blur');
+                  }}
+                  label={field.label}
+                  description={field.description}
+                />
+              );
+
+            case 'multiselect':
+              return (
+                <Select
+                  {...fieldProps}
+                  value={fieldState.state.value || []}
+                  onChange={(value) => {
+                    fieldState.handleChange(value);
+                    fieldState.handleBlur();
+                    fieldState.validate('change');
+                  }}
+                  onBlur={() => {
+                    fieldState.handleBlur();
+                    fieldState.validate('blur');
+                  }}
+                  data={field.options || []}
+                  multiple
+                  searchable
+                  clearable
+                />
+              );
+
+            case 'number':
+              return (
+                <NumberInput
+                  {...fieldProps}
+                  value={fieldState.state.value || 0}
+                  onChange={(value) => {
+                    fieldState.handleChange(value);
+                    fieldState.handleBlur();
+                    fieldState.validate('change');
+                  }}
+                  onBlur={() => {
+                    fieldState.handleBlur();
+                    fieldState.validate('blur');
+                  }}
+                  min={0}
+                  step={1}
+                />
+              );
+
+            case 'array':
+            case 'dynamicArray':
+              return (
+                <Box>
+                  <Text size="sm" fw={500} mb="xs">
+                    {field.label}
+                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                  </Text>
+                  {field.description && (
+                    <Text size="xs" c="dimmed" mb="sm">
+                      {field.description}
+                    </Text>
+                  )}
+                  <Stack gap="xs">
+                    {(fieldState.state.value || []).map((item: string, index: number) => (
+                      <Group key={index} gap="xs">
+                        <TextInput
+                          value={item}
+                          onChange={(e) => {
+                            const newArray = [...(fieldState.state.value || [])];
+                            newArray[index] = e.target.value;
+                            fieldState.handleChange(newArray);
+                            fieldState.handleBlur();
+                            fieldState.validate('change');
+                          }}
+                          onBlur={() => {
+                            fieldState.handleBlur();
+                            fieldState.validate('blur');
+                          }}
+                          placeholder={field.arrayConfig?.placeholder || 'Enter item'}
+                          className="flex-1"
+                        />
+                        <ActionIcon
+                          color="red"
+                          variant="subtle"
+                          onClick={() => {
+                            const newArray = (fieldState.state.value || []).filter((_: any, i: number) => i !== index);
+                            fieldState.handleChange(newArray);
+                          }}
+                        >
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      </Group>
+                    ))}
+                    {(!field.arrayConfig?.maxItems || (fieldState.state.value || []).length < (field.arrayConfig?.maxItems || 10)) && (
+                      <Button
+                        variant="light"
+                        size="sm"
+                        leftSection={<IconPlus size={16} />}
+                        onClick={() => {
+                          const newArray = [...(fieldState.state.value || []), ''];
+                          fieldState.handleChange(newArray);
+                        }}
+                      >
+                        {field.arrayConfig?.addButtonText || 'Add Item'}
+                      </Button>
+                    )}
+                  </Stack>
+                  {shouldShowError && (
+                    <Text size="xs" c="red" mt="xs">
+                      {displayError}
+                    </Text>
+                  )}
+                </Box>
+              );
+
+            default:
+              return null;
+          }
+        }}
+      </form.Field>
+    );
   };
 
   return (
@@ -345,19 +422,28 @@ export function BaseForm<T = any>({
         </div>
 
         {/* Error Alert */}
-        {error && (
+        {formError && (
           <Alert
             icon={<IconAlertCircle size={16} />}
             title="Error"
             color="red"
             variant="light"
           >
-            {error}
+            {formError}
           </Alert>
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit}>
+        <form
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Validate all fields before submission
+            form.validateAllFields('change');
+            form.handleSubmit();
+          }}
+        >
           <Stack gap="md">
             <Grid>
               {fields.map((field) => (
@@ -543,3 +629,25 @@ export const createDynamicArrayField = (
   arrayConfig,
   ...options,
 });
+
+// Zod validation helpers
+export const createRequiredStringValidation = (message = 'This field is required') => 
+  z.string().min(1, message);
+
+export const createEmailValidation = (message = 'Please enter a valid email address') => 
+  z.string().email(message);
+
+export const createUrlValidation = (message = 'Please enter a valid URL') => 
+  z.string().url(message);
+
+export const createNumberValidation = (min = 0, message = 'Please enter a valid number') => 
+  z.number().min(min, message);
+
+export const createArrayValidation = (minLength = 1, message = 'At least one item is required') => 
+  z.array(z.string()).min(minLength, message);
+
+export const createOptionalStringValidation = () => 
+  z.string().optional();
+
+export const createBooleanValidation = () => 
+  z.boolean();

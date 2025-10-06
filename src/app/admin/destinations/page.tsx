@@ -8,6 +8,8 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { DestinationFormModal } from '@/components/forms/DestinationFormModal';
+import { DestinationImportModal } from '@/components/modals/DestinationImportModal';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { 
   Plus, 
   Search, 
@@ -21,7 +23,11 @@ import {
   Globe,
   Calendar,
   Thermometer,
-  Heart
+  Heart,
+  Upload,
+  Download,
+  FileText,
+  CheckSquare
 } from 'lucide-react';
 import { Destination, DestinationService } from '@/lib/services/destinations';
 import { cn } from '@/utils/cn';
@@ -88,6 +94,12 @@ function AdminDestinationsContent() {
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingDestination, setEditingDestination] = useState<Destination | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [selectedDestinations, setSelectedDestinations] = useState<Set<string>>(new Set());
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [destinationToDelete, setDestinationToDelete] = useState<Destination | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch destinations
   const fetchDestinations = useCallback(async (page: number = 1, reset: boolean = false) => {
@@ -230,14 +242,18 @@ function AdminDestinationsContent() {
   };
 
   // Delete destination
-  const deleteDestination = async (destination: Destination) => {
-    if (!confirm(`Are you sure you want to delete "${destination.name}"?`)) {
-      return;
-    }
+  const deleteDestination = (destination: Destination) => {
+    setDestinationToDelete(destination);
+    setShowDeleteModal(true);
+  };
 
+  const confirmDeleteDestination = async () => {
+    if (!destinationToDelete) return;
+
+    setIsDeleting(true);
     try {
       const sessionToken = localStorage.getItem('admin_session_token');
-      const response = await fetch(`/api/admin/destinations/${destination.id}`, {
+      const response = await fetch(`/api/admin/destinations/${destinationToDelete.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${sessionToken}`,
@@ -251,15 +267,135 @@ function AdminDestinationsContent() {
         // Remove the destination from the list
         setState(prev => ({
           ...prev,
-          destinations: prev.destinations.filter(dest => dest.id !== destination.id),
+          destinations: prev.destinations.filter(dest => dest.id !== destinationToDelete.id),
           totalCount: prev.totalCount - 1,
         }));
+        
+        // Close modal
+        setShowDeleteModal(false);
+        setDestinationToDelete(null);
       } else {
         console.error('Failed to delete destination:', result.error);
       }
     } catch (error) {
       console.error('Error deleting destination:', error);
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleSelectDestination = (destinationId: string) => {
+    const newSelected = new Set(selectedDestinations);
+    if (newSelected.has(destinationId)) {
+      newSelected.delete(destinationId);
+    } else {
+      newSelected.add(destinationId);
+    }
+    setSelectedDestinations(newSelected);
+    setShowBulkActions(newSelected.size > 0);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedDestinations.size === state.destinations.length) {
+      setSelectedDestinations(new Set());
+      setShowBulkActions(false);
+    } else {
+      setSelectedDestinations(new Set(state.destinations.map(dest => dest.id)));
+      setShowBulkActions(true);
+    }
+  };
+
+  const handleBulkAction = async (action: 'publish' | 'unpublish' | 'delete') => {
+    if (selectedDestinations.size === 0) return;
+
+    const actionText = action === 'delete' ? 'delete' : 
+                     action === 'publish' ? 'publish' : 'unpublish';
+    
+    if (!confirm(`Are you sure you want to ${actionText} ${selectedDestinations.size} destination(s)?`)) {
+      return;
+    }
+
+    try {
+      const sessionToken = localStorage.getItem('admin_session_token');
+      
+      for (const destinationId of Array.from(selectedDestinations)) {
+        if (action === 'delete') {
+          await fetch(`/api/admin/destinations/${destinationId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${sessionToken}`,
+              'Content-Type': 'application/json',
+            },
+          });
+        } else {
+          await fetch(`/api/admin/destinations/${destinationId}`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${sessionToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              is_published: action === 'publish',
+            }),
+          });
+        }
+      }
+
+      setSelectedDestinations(new Set());
+      setShowBulkActions(false);
+      await fetchDestinations(1, true);
+    } catch (error: any) {
+      alert(`Failed to ${actionText} destinations: ${error.message}`);
+    }
+  };
+
+  const handleExportDestinations = async () => {
+    try {
+      const sessionToken = localStorage.getItem('admin_session_token');
+      const params = new URLSearchParams();
+      
+      if (filters.search) params.set('search', filters.search);
+      if (filters.country) params.set('country', filters.country);
+      if (filters.isPublished !== undefined) params.set('is_published', filters.isPublished.toString());
+      
+      const [sortByField, sortOrder] = sortBy.split('-');
+      params.set('sort_by', sortByField);
+      params.set('sort_order', sortOrder);
+      params.set('limit', '1000'); // Export more records
+
+      const response = await fetch(`/api/admin/destinations/export?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to export destinations');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `destinations_export_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      alert(`Export failed: ${error.message}`);
+    }
+  };
+
+  const downloadSampleFile = (format: 'csv' | 'json') => {
+    const sampleUrl = `/samples/destinations_sample.${format}`;
+    const a = document.createElement('a');
+    a.href = sampleUrl;
+    a.download = `destinations_sample.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
 
@@ -296,6 +432,53 @@ function AdminDestinationsContent() {
                 Manage your travel destinations ({state.totalCount} total)
               </p>
             </div>
+          <div className="flex gap-3">
+            {/* Import & Export Actions */}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowImportModal(true)}
+                className="flex items-center gap-2"
+                disabled={!canCreate}
+              >
+                <Upload className="w-4 h-4" />
+                Import
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleExportDestinations}
+                className="flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Export
+              </Button>
+            </div>
+
+            {/* Sample Downloads */}
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => downloadSampleFile('csv')}
+                className="flex items-center gap-1"
+                title="Download destinations CSV Sample"
+              >
+                <FileText className="w-3 h-3" />
+                CSV
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => downloadSampleFile('json')}
+                className="flex items-center gap-1"
+                title="Download destinations JSON Sample"
+              >
+                <FileText className="w-3 h-3" />
+                JSON
+              </Button>
+            </div>
+
+            {/* Create Button */}
             {canCreate && (
               <Button
                 onClick={() => {
@@ -309,7 +492,61 @@ function AdminDestinationsContent() {
               </Button>
             )}
           </div>
+          </div>
         </div>
+
+        {/* Bulk Actions */}
+        {showBulkActions && (
+          <Card className="p-4 mb-6 bg-blue-50 border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CheckSquare className="w-5 h-5 text-blue-600" />
+                <span className="text-sm font-medium text-blue-900">
+                  {selectedDestinations.size} destination(s) selected
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkAction('publish')}
+                  className="text-green-700 border-green-300 hover:bg-green-50"
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  Publish
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkAction('unpublish')}
+                  className="text-orange-700 border-orange-300 hover:bg-orange-50"
+                >
+                  <EyeOff className="w-4 h-4 mr-1" />
+                  Unpublish
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkAction('delete')}
+                  className="text-red-700 border-red-300 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Delete
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedDestinations(new Set());
+                    setShowBulkActions(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Filters */}
         <Card className="mb-6">
@@ -417,8 +654,34 @@ function AdminDestinationsContent() {
 
         {/* Destinations Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Select All Checkbox */}
+          {state.destinations.length > 0 && (
+            <div className="col-span-full mb-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedDestinations.size === state.destinations.length}
+                  onChange={handleSelectAll}
+                  className="rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Select All ({state.destinations.length} destinations)
+                </span>
+              </label>
+            </div>
+          )}
+          
           {state.destinations.map((destination) => (
-            <Card key={destination.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <Card key={destination.id} className="overflow-hidden hover:shadow-lg transition-shadow relative">
+              {/* Selection Checkbox */}
+              <div className="absolute top-4 left-4 z-10">
+                <input
+                  type="checkbox"
+                  checked={selectedDestinations.has(destination.id)}
+                  onChange={() => handleSelectDestination(destination.id)}
+                  className="rounded border-gray-300 text-primary focus:ring-primary"
+                />
+              </div>
               <div className="relative h-48">
                 <Image
                   src={destination.image_cover_url || '/placeholder-destination.jpg'}
@@ -561,6 +824,36 @@ function AdminDestinationsContent() {
               setEditingDestination(null);
               fetchDestinations(1, true); // Refresh the list
             }}
+          />
+        )}
+
+        {/* Import Modal */}
+        {showImportModal && (
+          <DestinationImportModal
+            isOpen={showImportModal}
+            onClose={() => setShowImportModal(false)}
+            onSuccess={(result) => {
+              setShowImportModal(false);
+              fetchDestinations(1, true); // Refresh the list
+            }}
+          />
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && destinationToDelete && (
+          <ConfirmationModal
+            isOpen={showDeleteModal}
+            onClose={() => {
+              setShowDeleteModal(false);
+              setDestinationToDelete(null);
+            }}
+            onConfirm={confirmDeleteDestination}
+            title="Delete Destination"
+            message={`Are you sure you want to delete "${destinationToDelete.name}"? This action cannot be undone.`}
+            confirmText="Delete"
+            cancelText="Cancel"
+            type="danger"
+            isLoading={isDeleting}
           />
         )}
       </div>

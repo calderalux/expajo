@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import { ExperienceFormModal } from '@/components/admin/ExperienceFormModal';
+import { ExperienceFormModal } from '@/components/forms/ExperienceFormModal';
+import { ExperienceImportModal } from '@/components/modals/ExperienceImportModal';
 import { 
   Plus, 
   Search, 
@@ -20,11 +21,16 @@ import {
   MapPin,
   Clock,
   Users,
-  DollarSign
+  DollarSign,
+  Upload,
+  Download,
+  FileText,
+  MoreHorizontal,
+  CheckSquare
 } from 'lucide-react';
 import { Experience, ExperienceService } from '@/lib/services/experiences';
 import { cn } from '@/utils/cn';
-
+import { serviceTypeToLabel } from '@/types/database';
 interface ExperienceListState {
   experiences: Experience[];
   isLoading: boolean;
@@ -34,13 +40,7 @@ interface ExperienceListState {
 
 const categories = [
   'All Categories',
-  'Nightlife',
-  'Culture',
-  'Beach resort',
-  'Culinary',
-  'Art & Fashion',
-  'Adventure',
-  'Wellness',
+  ...Object.values(serviceTypeToLabel),
 ];
 
 const sortOptions = [
@@ -76,7 +76,10 @@ function ExperiencesAdmin() {
 
   const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
   const [showFormModal, setShowFormModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [selectedExperiences, setSelectedExperiences] = useState<Set<string>>(new Set());
+  const [showBulkActions, setShowBulkActions] = useState(false);
 
   const fetchExperiences = useCallback(async () => {
     try {
@@ -203,15 +206,129 @@ function ExperiencesAdmin() {
     }
   };
 
-  const handleFormSubmit = async () => {
+  const handleFormSuccess = async (experience: Experience) => {
     setShowFormModal(false);
     await fetchExperiences();
   };
 
+  const handleSelectExperience = (experienceId: string) => {
+    const newSelected = new Set(selectedExperiences);
+    if (newSelected.has(experienceId)) {
+      newSelected.delete(experienceId);
+    } else {
+      newSelected.add(experienceId);
+    }
+    setSelectedExperiences(newSelected);
+    setShowBulkActions(newSelected.size > 0);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedExperiences.size === state.experiences.length) {
+      setSelectedExperiences(new Set());
+      setShowBulkActions(false);
+    } else {
+      setSelectedExperiences(new Set(state.experiences.map(exp => exp.id)));
+      setShowBulkActions(true);
+    }
+  };
+
+  const handleBulkAction = async (action: 'activate' | 'deactivate' | 'delete') => {
+    if (selectedExperiences.size === 0) return;
+
+    const actionText = action === 'delete' ? 'delete' : 
+                     action === 'activate' ? 'activate' : 'deactivate';
+    
+    if (!confirm(`Are you sure you want to ${actionText} ${selectedExperiences.size} experience(s)?`)) {
+      return;
+    }
+
+    try {
+      const sessionToken = localStorage.getItem('admin_session_token');
+      
+      for (const experienceId of Array.from(selectedExperiences)) {
+        if (action === 'delete') {
+          await fetch(`/api/admin/experiences/${experienceId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${sessionToken}`,
+              'Content-Type': 'application/json',
+            },
+          });
+        } else {
+          await fetch(`/api/admin/experiences/${experienceId}`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${sessionToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              is_active: action === 'activate',
+            }),
+          });
+        }
+      }
+
+      setSelectedExperiences(new Set());
+      setShowBulkActions(false);
+      await fetchExperiences();
+    } catch (error: any) {
+      alert(`Failed to ${actionText} experiences: ${error.message}`);
+    }
+  };
+
+  const handleExportExperiences = async () => {
+    try {
+      const sessionToken = localStorage.getItem('admin_session_token');
+      const params = new URLSearchParams();
+      
+      if (filters.search) params.set('search', filters.search);
+      if (filters.category !== 'All Categories') params.set('category', filters.category);
+      if (filters.status !== 'all') params.set('is_active', filters.status === 'active' ? 'true' : 'false');
+      
+      const [sortBy, sortOrder] = filters.sort.split('-');
+      params.set('sort_by', sortBy);
+      params.set('sort_order', sortOrder);
+      params.set('limit', '1000'); // Export more records
+
+      const response = await fetch(`/api/admin/experiences/export?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to export experiences');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `experiences_export_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      alert(`Export failed: ${error.message}`);
+    }
+  };
+
+  const downloadSampleFile = (format: 'csv' | 'json') => {
+    const sampleUrl = `/samples/experiences_sample.${format}`;
+    const a = document.createElement('a');
+    a.href = sampleUrl;
+    a.download = `experiences_sample.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-NG', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'NGN',
+      currency: 'USD',
     }).format(price);
   };
 
@@ -235,13 +352,114 @@ function ExperiencesAdmin() {
               Create, edit, and manage travel experiences
             </p>
           </div>
-          {canCreate && (
-            <Button onClick={handleCreateExperience} leftIcon={<Plus size={20} />}>
-              Add Experience
-            </Button>
-          )}
+          <div className="flex gap-3">
+            {/* Import & Export Actions */}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowImportModal(true)}
+                className="flex items-center gap-2"
+                disabled={!canCreate}
+              >
+                <Upload className="w-4 h-4" />
+                Import
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleExportExperiences}
+                className="flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Export
+              </Button>
+            </div>
+
+            {/* Sample Downloads */}
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => downloadSampleFile('csv')}
+                className="flex items-center gap-1"
+                title="Download CSV Sample"
+              >
+                <FileText className="w-3 h-3" />
+                CSV
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => downloadSampleFile('json')}
+                className="flex items-center gap-1"
+                title="Download JSON Sample"
+              >
+                <FileText className="w-3 h-3" />
+                JSON
+              </Button>
+            </div>
+
+            {/* Create Button */}
+            {canCreate && (
+              <Button onClick={handleCreateExperience} leftIcon={<Plus size={20} />}>
+                Add Experience
+              </Button>
+            )}
+          </div>
         </div>
       </div>
+
+        {/* Bulk Actions */}
+        {showBulkActions && (
+          <Card className="p-4 mb-6 bg-blue-50 border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CheckSquare className="w-5 h-5 text-blue-600" />
+                <span className="text-sm font-medium text-blue-900">
+                  {selectedExperiences.size} experience(s) selected
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkAction('activate')}
+                  className="text-green-700 border-green-300 hover:bg-green-50"
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  Activate
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkAction('deactivate')}
+                  className="text-orange-700 border-orange-300 hover:bg-orange-50"
+                >
+                  <EyeOff className="w-4 h-4 mr-1" />
+                  Deactivate
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkAction('delete')}
+                  className="text-red-700 border-red-300 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Delete
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedExperiences(new Set());
+                    setShowBulkActions(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Filters */}
         <Card className="p-6 mb-6">
@@ -323,8 +541,34 @@ function ExperiencesAdmin() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Select All Checkbox */}
+            {state.experiences.length > 0 && (
+              <div className="col-span-full mb-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedExperiences.size === state.experiences.length}
+                    onChange={handleSelectAll}
+                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Select All ({state.experiences.length} experiences)
+                  </span>
+                </label>
+              </div>
+            )}
+            
             {state.experiences.map((experience) => (
-              <Card key={experience.id} className="p-6 hover:shadow-md transition-shadow">
+              <Card key={experience.id} className="p-6 hover:shadow-md transition-shadow relative">
+                {/* Selection Checkbox */}
+                <div className="absolute top-4 left-4 z-10">
+                  <input
+                    type="checkbox"
+                    checked={selectedExperiences.has(experience.id)}
+                    onChange={() => handleSelectExperience(experience.id)}
+                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                </div>
                 {/* Image */}
                 <div className="h-48 bg-gray-200 rounded-lg mb-4 overflow-hidden">
                   {experience.image_urls && experience.image_urls.length > 0 ? (
@@ -422,11 +666,23 @@ function ExperiencesAdmin() {
         {/* Form Modal */}
         {showFormModal && (
           <ExperienceFormModal
-            experience={selectedExperience}
             isOpen={showFormModal}
             onClose={() => setShowFormModal(false)}
-            onSubmit={handleFormSubmit}
-            isCreating={isCreating}
+            onSuccess={handleFormSuccess}
+            experience={selectedExperience}
+            mode={isCreating ? 'create' : 'edit'}
+          />
+        )}
+
+        {/* Import Modal */}
+        {showImportModal && (
+          <ExperienceImportModal
+            isOpen={showImportModal}
+            onClose={() => setShowImportModal(false)}
+            onSuccess={(result) => {
+              setShowImportModal(false);
+              fetchExperiences(); // Refresh the list
+            }}
           />
         )}
     </div>
@@ -434,5 +690,9 @@ function ExperiencesAdmin() {
 }
 
 export default function ExperiencesAdminPage() {
-  return <ExperiencesAdmin />;
+  return (
+    <AuthGuard>
+      <ExperiencesAdmin />
+    </AuthGuard>
+  );
 }

@@ -1,31 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useForm } from '@tanstack/react-form';
+import { Modal } from '@/components/ui/Modal';
+import { BaseForm, FormFieldConfig, FormAction, createRequiredStringValidation, createOptionalStringValidation } from '@/components/forms/BaseForm';
 import { 
-  Modal, 
-  Stack, 
-  Group, 
-  Text, 
-  Button, 
-  Alert,
-  Image,
-  TextInput,
-  Textarea,
-  ActionIcon,
-  TagsInput
-} from '@mantine/core';
-import { IconUpload, IconX, IconAlertCircle } from '@tabler/icons-react';
-import { 
-  destinationSchema, 
   createDestinationSchema, 
   updateDestinationSchema,
-  DestinationFormData,
-  CreateDestinationData,
-  UpdateDestinationData,
   generateSlug
 } from '@/lib/validations/destinations';
-import { DestinationService } from '@/lib/services/destinations';
 import { Database } from '@/types/database';
 
 type Destination = Database['public']['Tables']['destinations']['Row'];
@@ -67,12 +49,207 @@ export function DestinationFormModal({
 }: DestinationFormModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [imageGallery, setImageGallery] = useState<string[]>([]);
-  const [highlights, setHighlights] = useState<string[]>([]);
-  const [previewImages, setPreviewImages] = useState<string[]>([]);
+  const [formKey, setFormKey] = useState(0); // Key to force form reset
 
-  const form = useForm({
-    defaultValues: {
+  // Reset form when modal opens/closes or mode changes
+  useEffect(() => {
+    if (isOpen) {
+      setFormKey(prev => prev + 1); // Force form reset
+      setError(null); // Clear any previous errors
+    }
+  }, [isOpen, mode, destination?.id]);
+
+  // Form field configuration
+  const fields: FormFieldConfig[] = [
+    {
+      name: 'name',
+      label: 'Destination Name',
+      type: 'text',
+      placeholder: 'Enter destination name',
+      description: 'The name of the destination',
+      required: true,
+      gridSpan: 12,
+      validation: createRequiredStringValidation('Destination name is required'),
+    },
+    {
+      name: 'description',
+      label: 'Description',
+      type: 'textarea',
+      placeholder: 'Describe the destination...',
+      description: 'Detailed description of the destination',
+      required: true,
+      gridSpan: 12,
+      validation: createRequiredStringValidation('Description is required'),
+    },
+    {
+      name: 'country',
+      label: 'Country',
+      type: 'select',
+      placeholder: 'Select country',
+      description: 'The country where this destination is located',
+      required: true,
+      options: [
+        { value: 'Nigeria', label: 'Nigeria' },
+        { value: 'United States', label: 'United States' },
+        { value: 'United Kingdom', label: 'United Kingdom' },
+        { value: 'France', label: 'France' },
+        { value: 'Germany', label: 'Germany' },
+        { value: 'Italy', label: 'Italy' },
+        { value: 'Spain', label: 'Spain' },
+        { value: 'South Africa', label: 'South Africa' },
+        { value: 'Kenya', label: 'Kenya' },
+        { value: 'Ghana', label: 'Ghana' },
+      ],
+      gridSpan: 6,
+      validation: createRequiredStringValidation('Country is required'),
+    },
+    {
+      name: 'country_code',
+      label: 'Country Code',
+      type: 'select',
+      placeholder: 'Select country code',
+      description: 'ISO country code',
+      required: true,
+      options: COUNTRY_CODE_OPTIONS,
+      gridSpan: 6,
+      validation: createRequiredStringValidation('Country code is required'),
+    },
+    {
+      name: 'region',
+      label: 'Region/State',
+      type: 'text',
+      placeholder: 'Enter region or state',
+      description: 'Region, state, or province',
+      gridSpan: 12,
+    },
+    {
+      name: 'image_cover_url',
+      label: 'Cover Image URL',
+      type: 'url',
+      placeholder: 'https://example.com/image.jpg',
+      description: 'Main image for the destination',
+      gridSpan: 12,
+    },
+    {
+      name: 'best_time_to_visit',
+      label: 'Best Time to Visit',
+      type: 'text',
+      placeholder: 'e.g., December to March',
+      description: 'When is the best time to visit this destination?',
+      gridSpan: 6,
+    },
+    {
+      name: 'climate',
+      label: 'Climate',
+      type: 'text',
+      placeholder: 'e.g., Tropical, Mediterranean',
+      description: 'Climate description',
+      gridSpan: 6,
+    },
+    {
+      name: 'language',
+      label: 'Language',
+      type: 'text',
+      placeholder: 'e.g., English, French',
+      description: 'Primary language(s) spoken',
+      gridSpan: 6,
+    },
+    {
+      name: 'currency',
+      label: 'Currency',
+      type: 'select',
+      placeholder: 'Select currency',
+      description: 'Primary currency used',
+      options: CURRENCY_OPTIONS,
+      gridSpan: 6,
+    },
+    {
+      name: 'image_gallery',
+      label: 'Image Gallery',
+      type: 'array',
+      description: 'Add multiple images to showcase the destination',
+      arrayConfig: {
+        itemType: 'url',
+        placeholder: 'Enter image URL',
+        maxItems: 10,
+        addButtonText: 'Add Image',
+      },
+      gridSpan: 12,
+    },
+    {
+      name: 'highlights',
+      label: 'Highlights',
+      type: 'array',
+      description: 'Key features and attractions of this destination',
+      arrayConfig: {
+        itemType: 'text',
+        placeholder: 'Enter highlight',
+        maxItems: 10,
+        addButtonText: 'Add Highlight',
+      },
+      gridSpan: 12,
+    },
+    {
+      name: 'featured',
+      label: 'Featured Destination',
+      type: 'switch',
+      description: 'Featured destinations appear prominently on the homepage',
+      gridSpan: 6,
+    },
+    {
+      name: 'is_published',
+      label: 'Published',
+      type: 'switch',
+      description: 'Published destinations are visible to the public',
+      gridSpan: 6,
+    },
+  ];
+
+  // Handle modal close with cleanup
+  const handleClose = () => {
+    setError(null); // Clear errors
+    setIsLoading(false); // Reset loading state
+    onClose();
+  };
+
+  // Form actions
+  const actions: FormAction[] = [
+    {
+      label: 'Cancel',
+      type: 'button',
+      variant: 'outline',
+      onClick: handleClose,
+    },
+    {
+      label: mode === 'create' ? 'Create Destination' : 'Update Destination',
+      type: 'submit',
+      variant: 'filled',
+      color: 'blue',
+      loading: isLoading,
+    },
+  ];
+
+  // Initial values
+  const getInitialValues = () => {
+    if (destination && mode === 'edit') {
+      return {
+        name: destination.name,
+        description: destination.description || '',
+        country: destination.country,
+        country_code: destination.country_code || '',
+        region: destination.region || '',
+        image_cover_url: destination.image_cover_url || '',
+        best_time_to_visit: destination.best_time_to_visit || '',
+        climate: destination.climate || '',
+        language: destination.language || '',
+        currency: destination.currency || 'USD',
+        image_gallery: destination.image_gallery || [],
+        highlights: destination.highlights || [],
+        featured: destination.featured || false,
+        is_published: destination.is_published || false,
+      };
+    }
+    return {
       name: '',
       description: '',
       country: '',
@@ -82,494 +259,92 @@ export function DestinationFormModal({
       best_time_to_visit: '',
       climate: '',
       language: '',
-      currency: 'USD' as 'USD' | 'EUR' | 'GBP' | 'NGN',
+      currency: 'USD',
+      image_gallery: [],
+      highlights: [],
       featured: false,
       is_published: false,
-    },
-    onSubmit: async ({ value }) => {
-      setIsLoading(true);
-      setError(null);
+    };
+  };
 
-      try {
-        // Prepare form data with required fields
-        const formData = {
-          ...value,
-          slug: generateSlug(value.name), // Auto-generate slug
-          ...(mode === 'edit' && destination?.id ? { id: destination.id } : {}), // Add ID for updates
-        };
+  // Handle form submission
+  const handleSubmit = async (values: any) => {
+    setIsLoading(true);
+    setError(null);
 
-        console.log('Form data being validated:', formData);
-        console.log('Mode:', mode);
-        console.log('Schema being used:', mode === 'create' ? 'createDestinationSchema' : 'updateDestinationSchema');
+    try {
+      // Prepare form data with required fields
+      const formData = {
+        ...values,
+        slug: generateSlug(values.name), // Auto-generate slug
+        ...(mode === 'edit' && destination?.id ? { id: destination.id } : {}), // Add ID for updates
+      };
 
-        // Validate the form data
-        const schema = mode === 'create' ? createDestinationSchema : updateDestinationSchema;
-        const validationResult = schema.safeParse(formData);
-        
-        if (!validationResult.success) {
-          console.log('Validation errors:', validationResult.error.errors);
-          const errors = validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
-          throw new Error(`Validation failed: ${errors}`);
-        }
+      console.log('Form data being validated:', formData);
+      console.log('Mode:', mode);
+      console.log('Schema being used:', mode === 'create' ? 'createDestinationSchema' : 'updateDestinationSchema');
 
-        const sessionToken = localStorage.getItem('admin_session_token');
-        const url = mode === 'create' 
-          ? '/api/admin/destinations'
-          : `/api/admin/destinations/${destination?.id}`;
-        const method = mode === 'create' ? 'POST' : 'PUT';
-
-        const response = await fetch(url, {
-          method,
-          headers: {
-            'Authorization': `Bearer ${sessionToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...validationResult.data,
-            image_gallery: imageGallery,
-            highlights: highlights,
-          }),
-        });
-
-        const data = await response.json();
-        
-        if (data.success) {
-          onSuccess(data.data);
-          onClose();
-        } else {
-          setError(data.error || `Failed to ${mode} destination`);
-        }
-      } catch (err: any) {
-        setError(err.message || 'An unexpected error occurred');
-        console.error(`${mode} destination error:`, err);
-      } finally {
-        setIsLoading(false);
+      // Validate the form data
+      const schema = mode === 'create' ? createDestinationSchema : updateDestinationSchema;
+      const validationResult = schema.safeParse(formData);
+      
+      if (!validationResult.success) {
+        console.log('Validation errors:', validationResult.error.errors);
+        const errors = validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+        throw new Error(`Validation failed: ${errors}`);
       }
-    },
-  });
 
-  // Reset form when modal opens/closes
-  useEffect(() => {
-    if (isOpen) {
-      setError(null);
-      if (destination && mode === 'edit') {
-        form.setFieldValue('name', destination.name);
-        form.setFieldValue('description', destination.description || '');
-        form.setFieldValue('country', destination.country);
-        form.setFieldValue('country_code', destination.country_code || '');
-        form.setFieldValue('region', destination.region || '');
-        form.setFieldValue('image_cover_url', destination.image_cover_url || '');
-        form.setFieldValue('best_time_to_visit', destination.best_time_to_visit || '');
-        form.setFieldValue('climate', destination.climate || '');
-        form.setFieldValue('language', destination.language || '');
-        form.setFieldValue('currency', (destination.currency as 'USD' | 'EUR' | 'GBP' | 'NGN') || 'USD');
-        form.setFieldValue('featured', destination.featured || false);
-        form.setFieldValue('is_published', destination.is_published || false);
-        
-        setImageGallery(destination.image_gallery || []);
-        setHighlights(destination.highlights || []);
-        setPreviewImages(destination.image_gallery || []);
+      const sessionToken = localStorage.getItem('admin_session_token');
+      const url = mode === 'create' 
+        ? '/api/admin/destinations'
+        : `/api/admin/destinations/${destination?.id}`;
+      const method = mode === 'create' ? 'POST' : 'PUT';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(validationResult.data),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        onSuccess(data.data);
+        handleClose();
       } else {
-        form.reset();
-        setImageGallery([]);
-        setHighlights([]);
-        setPreviewImages([]);
+        setError(data.error || `Failed to ${mode} destination`);
       }
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred');
+      console.error(`${mode} destination error:`, err);
+    } finally {
+      setIsLoading(false);
     }
-  }, [isOpen, destination, mode, form]);
-
-  const handleImageUrlAdd = (url: string) => {
-    if (url && !imageGallery.includes(url)) {
-      setImageGallery([...imageGallery, url]);
-      setPreviewImages([...previewImages, url]);
-    }
-  };
-
-  const handleImageRemove = (index: number) => {
-    const newGallery = imageGallery.filter((_, i) => i !== index);
-    const newPreview = previewImages.filter((_, i) => i !== index);
-    setImageGallery(newGallery);
-    setPreviewImages(newPreview);
-  };
-
-  const handleHighlightAdd = (highlight: string) => {
-    if (highlight && !highlights.includes(highlight)) {
-      setHighlights([...highlights, highlight]);
-    }
-  };
-
-  const handleHighlightRemove = (index: number) => {
-    setHighlights(highlights.filter((_, i) => i !== index));
   };
 
   return (
     <Modal
-      opened={isOpen}
-      onClose={onClose}
+      isOpen={isOpen}
+      onClose={handleClose}
       title={mode === 'create' ? 'Create New Destination' : 'Edit Destination'}
       size="xl"
-      centered
+      maxHeight="90vh"
     >
-      <form onSubmit={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        form.handleSubmit();
-      }}>
-        <Stack gap="lg">
-          {/* Error Display */}
-          {error && (
-            <Alert
-              icon={<IconAlertCircle size={16} />}
-              title="Error"
-              color="red"
-              variant="light"
-            >
-              {error}
-            </Alert>
-          )}
-
-          {/* Basic Information */}
-          <div>
-            <Text size="sm" fw={500} mb="xs">Basic Information</Text>
-            <Group grow>
-              <form.Field
-                name="name"
-              >
-                {(field) => (
-                  <TextInput
-                    label="Destination Name"
-                    placeholder="Enter destination name"
-                    description="The name of the destination"
-                    required
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    error={field.state.meta.errors.length > 0 ? field.state.meta.errors[0] : undefined}
-                  />
-                )}
-              </form.Field>
-            </Group>
-            
-            <form.Field
-              name="description"
-            >
-              {(field) => (
-                <Textarea
-                  label="Description"
-                  placeholder="Describe the destination..."
-                  description="Detailed description of the destination"
-                  required
-                  rows={3}
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  error={field.state.meta.errors.length > 0 ? field.state.meta.errors[0] : undefined}
-                />
-              )}
-            </form.Field>
-          </div>
-
-          {/* Location Information */}
-          <div>
-            <Text size="sm" fw={500} mb="xs">Location Information</Text>
-            <Group grow>
-              <form.Field
-                name="country"
-              >
-                {(field) => (
-                  <TextInput
-                    label="Country"
-                    placeholder="Enter country name"
-                    description="The country where this destination is located"
-                    required
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    error={field.state.meta.errors.length > 0 ? field.state.meta.errors[0] : undefined}
-                  />
-                )}
-              </form.Field>
-              
-              <form.Field
-                name="country_code"
-              >
-                {(field) => (
-                  <TextInput
-                    label="Country Code"
-                    placeholder="e.g., NG, US, GB"
-                    description="ISO country code"
-                    required
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    error={field.state.meta.errors.length > 0 ? field.state.meta.errors[0] : undefined}
-                  />
-                )}
-              </form.Field>
-            </Group>
-            
-            <form.Field
-              name="region"
-            >
-              {(field) => (
-                <TextInput
-                  label="Region/State"
-                  placeholder="Enter region or state"
-                  description="Region, state, or province"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  error={field.state.meta.errors.length > 0 ? field.state.meta.errors[0] : undefined}
-                />
-              )}
-            </form.Field>
-          </div>
-
-          {/* Visual & Media */}
-          <div>
-            <Text size="sm" fw={500} mb="xs">Visual & Media</Text>
-            <form.Field
-              name="image_cover_url"
-            >
-              {(field) => (
-                <TextInput
-                  label="Cover Image URL"
-                  placeholder="https://example.com/image.jpg"
-                  description="Main image for the destination"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  error={field.state.meta.errors.length > 0 ? field.state.meta.errors[0] : undefined}
-                />
-              )}
-            </form.Field>
-          </div>
-
-          {/* Travel Information */}
-          <div>
-            <Text size="sm" fw={500} mb="xs">Travel Information</Text>
-            <Group grow>
-              <form.Field
-                name="best_time_to_visit"
-              >
-                {(field) => (
-                  <TextInput
-                    label="Best Time to Visit"
-                    placeholder="e.g., December to March"
-                    description="When is the best time to visit this destination?"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    error={field.state.meta.errors.length > 0 ? field.state.meta.errors[0] : undefined}
-                  />
-                )}
-              </form.Field>
-              
-              <form.Field
-                name="climate"
-              >
-                {(field) => (
-                  <TextInput
-                    label="Climate"
-                    placeholder="e.g., Tropical, Mediterranean"
-                    description="Climate description"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    error={field.state.meta.errors.length > 0 ? field.state.meta.errors[0] : undefined}
-                  />
-                )}
-              </form.Field>
-            </Group>
-            
-            <Group grow>
-              <form.Field
-                name="language"
-              >
-                {(field) => (
-                  <TextInput
-                    label="Language"
-                    placeholder="e.g., English, French"
-                    description="Primary language(s) spoken"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    error={field.state.meta.errors.length > 0 ? field.state.meta.errors[0] : undefined}
-                  />
-                )}
-              </form.Field>
-              
-              <form.Field
-                name="currency"
-              >
-                {(field) => (
-                  <TextInput
-                    label="Currency"
-                    placeholder="e.g., USD, EUR, NGN"
-                    description="Primary currency used"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value as 'USD' | 'EUR' | 'GBP' | 'NGN')}
-                    error={field.state.meta.errors.length > 0 ? field.state.meta.errors[0] : undefined}
-                  />
-                )}
-              </form.Field>
-            </Group>
-          </div>
-
-          {/* Image Gallery Section */}
-          <div>
-            <Text size="sm" fw={500} mb="xs">Image Gallery</Text>
-            <Text size="xs" c="dimmed" mb="md">
-              Add multiple images to showcase the destination
-            </Text>
-            
-            {/* Add Image URL */}
-            <Group mb="md">
-              <TextInput
-                placeholder="Enter image URL"
-                style={{ flex: 1 }}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const input = e.target as HTMLInputElement;
-                    handleImageUrlAdd(input.value);
-                    input.value = '';
-                  }
-                }}
-              />
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const input = document.querySelector('input[placeholder="Enter image URL"]') as HTMLInputElement;
-                  if (input?.value) {
-                    handleImageUrlAdd(input.value);
-                    input.value = '';
-                  }
-                }}
-              >
-                Add Image
-              </Button>
-            </Group>
-
-            {/* Image Previews */}
-            {previewImages.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {previewImages.map((url, index) => (
-                  <div key={index} className="relative group">
-                    <Image
-                      src={url}
-                      alt={`Gallery image ${index + 1}`}
-                      height={120}
-                      className="rounded-lg object-cover"
-                      fallbackSrc="/placeholder-image.jpg"
-                    />
-                    <ActionIcon
-                      color="red"
-                      variant="filled"
-                      size="sm"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => handleImageRemove(index)}
-                    >
-                      <IconX size={12} />
-                    </ActionIcon>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Highlights Section */}
-          <div>
-            <Text size="sm" fw={500} mb="xs">Highlights</Text>
-            <Text size="xs" c="dimmed" mb="md">
-              Key features and attractions of this destination
-            </Text>
-            
-            <TagsInput
-              placeholder="Add highlights (press Enter to add)"
-              value={highlights}
-              onChange={setHighlights}
-              maxTags={10}
-              splitChars={[',', ' ']}
-            />
-          </div>
-
-          {/* Settings */}
-          <div>
-            <Text size="sm" fw={500} mb="xs">Settings</Text>
-            <Group grow>
-              <form.Field
-                name="featured"
-              >
-                {(field) => (
-                  <div>
-                    <Text size="sm" fw={500} mb="xs">Featured Destination</Text>
-                    <Text size="xs" c="dimmed" mb="md">
-                      Featured destinations appear prominently on the homepage
-                    </Text>
-                    <input
-                      type="checkbox"
-                      checked={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.checked)}
-                      className="mr-2"
-                    />
-                    <Text size="sm" component="span">
-                      {field.state.value ? 'Yes' : 'No'}
-                    </Text>
-                    {field.state.meta.errors.length > 0 && (
-                      <Text size="xs" c="red" mt="xs">
-                        {field.state.meta.errors[0]}
-                      </Text>
-                    )}
-                  </div>
-                )}
-              </form.Field>
-              
-              <form.Field
-                name="is_published"
-              >
-                {(field) => (
-                  <div>
-                    <Text size="sm" fw={500} mb="xs">Published</Text>
-                    <Text size="xs" c="dimmed" mb="md">
-                      Published destinations are visible to the public
-                    </Text>
-                    <input
-                      type="checkbox"
-                      checked={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.checked)}
-                      className="mr-2"
-                    />
-                    <Text size="sm" component="span">
-                      {field.state.value ? 'Yes' : 'No'}
-                    </Text>
-                    {field.state.meta.errors.length > 0 && (
-                      <Text size="xs" c="red" mt="xs">
-                        {field.state.meta.errors[0]}
-                      </Text>
-                    )}
-                  </div>
-                )}
-              </form.Field>
-            </Group>
-          </div>
-
-          {/* Action Buttons */}
-          <Group justify="flex-end" gap="sm" className="pt-4">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="filled"
-              color="blue"
-              loading={isLoading}
-              style={{
-                backgroundColor: '#4362FF',
-                color: 'white',
-                border: 'none',
-              }}
-            >
-              {mode === 'create' ? 'Create Destination' : 'Update Destination'}
-            </Button>
-          </Group>
-        </Stack>
-      </form>
+      <BaseForm
+        key={formKey} // Force form reset when key changes
+        title=""
+        description=""
+        fields={fields}
+        actions={actions}
+        onSubmit={handleSubmit}
+        initialValues={getInitialValues()}
+        isLoading={isLoading}
+        error={error}
+        className="border-0 shadow-none"
+      />
     </Modal>
   );
 }

@@ -1,67 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
+import { CacheService, CacheKeys, CacheTags } from '@/lib/services/cache';
+import { checkAdminAuth } from '@/lib/middleware/auth';
 import { PackageService } from '@/lib/services/packages';
-import { PackageCategory, CurrencyEnum } from '@/lib/supabase';
-import { z } from 'zod';
+import { packageUpdateSchema } from '@/lib/validations/packages';
 
-// Validation schemas
-const UpdatePackageSchema = z.object({
-  destination_id: z.string().uuid().optional(),
-  title: z.string().min(1).optional(),
-  slug: z.string().optional(),
-  summary: z.string().optional(),
-  description: z.string().optional(),
-  category: z.nativeEnum(PackageCategory).optional(),
-  lead_partner_id: z.string().uuid().optional(),
-  duration_days: z.number().positive().optional(),
-  group_size_limit: z.number().positive().optional(),
-  inclusions: z.any().optional(),
-  exclusions: z.any().optional(),
-  itinerary: z.any().optional(),
-  base_price: z.number().positive().optional(),
-  currency: z.nativeEnum(CurrencyEnum).optional(),
-  discount_percent: z.number().min(0).max(100).optional(),
-  featured: z.boolean().optional(),
-  luxury_certified: z.boolean().optional(),
-  availability: z.any().optional(),
-  is_published: z.boolean().optional(),
-});
-
-// GET /api/admin/packages/[id] - Get single package (admin only)
+// GET /api/admin/packages/[id] - Get package by ID with caching
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  req: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createServerClient();
-    const { id } = await params;
-
-    if (!id) {
-      return NextResponse.json(
-        { success: false, error: 'Package ID is required' },
-        { status: 400 }
-      );
+    const authCheck = await checkAdminAuth(req);
+    if (!authCheck.success) {
+      return NextResponse.json(authCheck, { status: 401 });
     }
 
-    const { data, error } = await PackageService.getPackageById(id);
+    const { id } = params;
+    
+    // Create cache key
+    const cacheKey = CacheKeys.packages.byId(id);
 
-    if (error) {
-      return NextResponse.json(
-        { success: false, error: error },
-        { status: 500 }
-      );
+    // Try to get from cache first
+    const cached = await CacheService.get(cacheKey);
+    if (cached) {
+      return NextResponse.json({
+        success: true,
+        data: cached,
+        fromCache: true,
+      });
     }
 
-    if (!data) {
-      return NextResponse.json(
-        { success: false, error: 'Package not found' },
-        { status: 404 }
-      );
+    // Fetch from database
+    const packageData = await PackageService.getPackageById(id);
+
+    if (!packageData) {
+      return NextResponse.json({
+        success: false,
+        error: 'Package not found',
+      }, { status: 404 });
     }
+
+    // Cache the result for 10 minutes
+    await CacheService.set(cacheKey, packageData, { 
+      ttl: 600,
+      tags: [CacheTags.packages]
+    });
 
     return NextResponse.json({
       success: true,
-      data,
+      data: packageData,
     });
   } catch (error: any) {
     console.error('Error fetching package:', error);
@@ -72,50 +60,47 @@ export async function GET(
   }
 }
 
-// PUT /api/admin/packages/[id] - Update package (admin/staff only)
+// PUT /api/admin/packages/[id] - Update package with cache invalidation
 export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  req: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createServerClient();
-    const { id } = await params;
-    const body = await request.json();
-
-    if (!id) {
-      return NextResponse.json(
-        { success: false, error: 'Package ID is required' },
-        { status: 400 }
-      );
+    const authCheck = await checkAdminAuth(req);
+    if (!authCheck.success) {
+      return NextResponse.json(authCheck, { status: 401 });
     }
 
+    const body = await req.json();
+    
     // Validate request body
-    const validatedData = UpdatePackageSchema.parse(body);
-
-    const { data, error } = await PackageService.updatePackage(id, validatedData);
-
-    if (error) {
-      return NextResponse.json(
-        { success: false, error: error },
-        { status: 500 }
-      );
+    const validationResult = packageUpdateSchema.safeParse({
+      ...body,
+      id: params.id,
+    });
+    
+    if (!validationResult.success) {
+      return NextResponse.json({
+        success: false,
+        error: 'Validation failed',
+        details: validationResult.error.errors,
+      }, { status: 400 });
     }
+
+    const packageData = await PackageService.updatePackage(params.id, validationResult.data);
+
+    // Invalidate packages cache
+    await CacheService.invalidateByTags([CacheTags.packages]);
+    // Also invalidate specific package cache
+    await CacheService.delete(CacheKeys.packages.byId(params.id));
 
     return NextResponse.json({
       success: true,
-      data,
+      data: packageData,
       message: 'Package updated successfully',
     });
   } catch (error: any) {
     console.error('Error updating package:', error);
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { success: false, error: 'Validation error', details: error.errors },
-        { status: 400 }
-      );
-    }
-
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -123,34 +108,26 @@ export async function PUT(
   }
 }
 
-// DELETE /api/admin/packages/[id] - Delete package (super admin only)
+// DELETE /api/admin/packages/[id] - Delete package with cache invalidation
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  req: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createServerClient();
-    const { id } = await params;
-
-    if (!id) {
-      return NextResponse.json(
-        { success: false, error: 'Package ID is required' },
-        { status: 400 }
-      );
+    const authCheck = await checkAdminAuth(req);
+    if (!authCheck.success) {
+      return NextResponse.json(authCheck, { status: 401 });
     }
 
-    const { data, error } = await PackageService.deletePackage(id);
+    await PackageService.deletePackage(params.id);
 
-    if (error) {
-      return NextResponse.json(
-        { success: false, error: error },
-        { status: 500 }
-      );
-    }
+    // Invalidate packages cache
+    await CacheService.invalidateByTags([CacheTags.packages]);
+    // Also invalidate specific package cache
+    await CacheService.delete(CacheKeys.packages.byId(params.id));
 
     return NextResponse.json({
       success: true,
-      data,
       message: 'Package deleted successfully',
     });
   } catch (error: any) {

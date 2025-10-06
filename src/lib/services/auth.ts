@@ -443,13 +443,24 @@ export class AuthService {
     action: string
   ): Promise<boolean> {
     try {
-      const serverClient = createServerClient();
-      const { data, error } = await (serverClient as any).rpc('has_permission', {
-        resource_name: resource,
-        action_name: action,
-      });
+      // Get user profile with roles
+      const userProfile = await this.getAdminProfileWithRoles(userId);
+      if (!userProfile) {
+        return false;
+      }
 
-      return !error && data === true;
+      // Check if user has the specific permission
+      const permissionString = `${resource}:${action}`;
+      
+      // Check all user roles for the permission
+      for (const role of userProfile.roles) {
+        const rolePermissions = DEFAULT_ROLE_PERMISSIONS[role as UserRole] || [];
+        if (rolePermissions.includes(permissionString)) {
+          return true;
+        }
+      }
+
+      return false;
     } catch (error) {
       console.error('Permission check error:', error);
       return false;

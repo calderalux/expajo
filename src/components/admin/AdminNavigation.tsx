@@ -15,7 +15,8 @@ import {
   Shield,
   LogOut,
   Menu,
-  X
+  X,
+  List
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -28,6 +29,7 @@ function AdminNavigationContent({ children, currentPage }: AdminNavigationProps)
   const { user, logout } = useAuth();
   const { hasPermission: canManageDestinations } = usePermission('destinations', 'read');
   const { hasPermission: canManagePackages } = usePermission('packages', 'read');
+  const { hasPermission: canManagePackageItems } = usePermission('package_items', 'read');
   const { hasPermission: canManageBookings } = usePermission('bookings', 'read');
   const { hasPermission: canManageUsers } = usePermission('users', 'read');
   const { hasPermission: canManageSettings } = usePermission('settings', 'read');
@@ -81,6 +83,13 @@ function AdminNavigationContent({ children, currentPage }: AdminNavigationProps)
       href: '/admin/packages',
       permission: true, // Always show for admin users
       active: pathname === '/admin/packages',
+    },
+    {
+      name: 'Package Items',
+      icon: List,
+      href: '/admin/package-items',
+      permission: canManagePackageItems,
+      active: pathname === '/admin/package-items',
     },
     {
       name: 'Bookings',

@@ -1,3 +1,4 @@
+import { serviceTypeToLabel } from '@/types/database';
 import { z } from 'zod';
 
 // Experience validation schema
@@ -35,13 +36,7 @@ export const experienceUpdateSchema = experienceCreateSchema.partial();
 
 // Experience categories
 export const experienceCategories = [
-  'Nightlife',
-  'Culture',
-  'Beach resort',
-  'Culinary',
-  'Art & Fashion',
-  'Adventure',
-  'Wellness',
+  ...Object.values(serviceTypeToLabel),
 ] as const;
 
 export type ExperienceCategory = typeof experienceCategories[number];

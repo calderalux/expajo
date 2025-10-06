@@ -321,17 +321,6 @@ export const CacheKeys = {
     categories: () => 'experiences:categories',
   },
   
-  packages: {
-    all: (filters?: any, sort?: any, limit?: number) => 
-      `packages:all:${JSON.stringify({ filters, sort, limit })}`,
-    byId: (id: string) => `packages:id:${id}`,
-    featured: (limit: number) => `packages:featured:${limit}`,
-    byDestination: (destinationId: string, limit?: number) => 
-      `packages:destination:${destinationId}:${limit || 'all'}`,
-    search: (term: string, limit?: number) => 
-      `packages:search:${term}:${limit || 20}`,
-  },
-  
   faqs: {
     all: () => 'faqs:all',
     byCategory: (category: string) => `faqs:category:${category}`,
@@ -341,6 +330,47 @@ export const CacheKeys = {
     all: () => 'testimonials:all',
     featured: (limit: number) => `testimonials:featured:${limit}`,
   },
+  
+  packageItems: {
+    all: (filters?: any, sort?: any, limit?: number) => 
+      `package_items:all:${JSON.stringify({ filters, sort, limit })}`,
+    byId: (id: string) => `package_items:id:${id}`,
+    byType: (itemType: string, limit?: number) => 
+      `package_items:type:${itemType}:${limit || 'all'}`,
+    search: (term: string, limit?: number) => 
+      `package_items:search:${term}:${limit || 20}`,
+  },
+  
+  packageItemOptions: {
+    all: (filters?: any, sort?: any, limit?: number) => 
+      `package_item_options:all:${JSON.stringify({ filters, sort, limit })}`,
+    byId: (id: string) => `package_item_options:id:${id}`,
+    byPackageItem: (packageItemId: string, limit?: number) => 
+      `package_item_options:package_item:${packageItemId}:${limit || 'all'}`,
+    search: (term: string, limit?: number) => 
+      `package_item_options:search:${term}:${limit || 20}`,
+  },
+  
+  packages: {
+    all: (filters?: any, sort?: any, limit?: number) => 
+      `packages:all:${JSON.stringify({ filters, sort, limit })}`,
+    byId: (id: string) => `packages:id:${id}`,
+    byDestination: (destinationId: string, limit?: number) => 
+      `packages:destination:${destinationId}:${limit || 'all'}`,
+    featured: (limit?: number) => `packages:featured:${limit || 'all'}`,
+    search: (term: string, limit?: number) => 
+      `packages:search:${term}:${limit || 20}`,
+  },
+  
+  packageExperiences: {
+    byPackageId: (packageId: string) => `package_experiences:package:${packageId}`,
+    byExperienceId: (experienceId: string) => `package_experiences:experience:${experienceId}`,
+  },
+  
+  packageOptionMappings: {
+    byPackageId: (packageId: string) => `package_option_mappings:package:${packageId}`,
+    byOptionId: (optionId: string) => `package_option_mappings:option:${optionId}`,
+  },
 } as const;
 
 // Cache tags for invalidation
@@ -348,6 +378,10 @@ export const CacheTags = {
   destinations: 'destinations',
   experiences: 'experiences',
   packages: 'packages',
+  packageItems: 'package_items',
+  packageItemOptions: 'package_item_options',
+  packageExperiences: 'package_experiences',
+  packageOptionMappings: 'package_option_mappings',
   faqs: 'faqs',
   testimonials: 'testimonials',
   partners: 'partners',
