@@ -1,0 +1,515 @@
+[
+  {
+    "tablename": "admin_sessions",
+    "policyname": "Users can manage their own sessions",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "((auth.uid() = user_id) OR is_admin())",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "admin_sessions",
+    "policyname": "Users can view their own sessions",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "((auth.uid() = user_id) OR is_admin())",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "admin_sessions",
+    "policyname": "admin_sessions_service_role_all",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "true",
+    "with_check_expression": "true"
+  },
+  {
+    "tablename": "admin_settings",
+    "policyname": "Admins can manage all settings",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "admin_settings",
+    "policyname": "Public settings are viewable by all",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "((is_public = true) OR is_admin())",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "app_roles",
+    "policyname": "Admins can manage all roles",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "app_roles",
+    "policyname": "Users can view their own roles",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "((auth.uid() = user_id) OR is_admin())",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "audit_logs",
+    "policyname": "Admins can view all audit logs",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "audit_logs",
+    "policyname": "System can create audit logs",
+    "policy_type": "PERMISSIVE",
+    "operation": "INSERT",
+    "applicable_roles": "public",
+    "using_expression": "No condition",
+    "with_check_expression": "true"
+  },
+  {
+    "tablename": "booking_options",
+    "policyname": "booking_opts_by_owner",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "(EXISTS ( SELECT 1\n   FROM bookings b\n  WHERE ((b.id = booking_options.booking_id) AND ((b.user_id = auth.uid()) OR is_admin()))))",
+    "with_check_expression": "(EXISTS ( SELECT 1\n   FROM bookings b\n  WHERE ((b.id = booking_options.booking_id) AND ((b.user_id = auth.uid()) OR is_admin()))))"
+  },
+  {
+    "tablename": "booking_service_assignments",
+    "policyname": "bsa_admin_all",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "is_admin()"
+  },
+  {
+    "tablename": "booking_service_assignments",
+    "policyname": "bsa_owner_read",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "(EXISTS ( SELECT 1\n   FROM bookings b\n  WHERE ((b.id = booking_service_assignments.booking_id) AND ((b.user_id = auth.uid()) OR is_admin()))))",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "bookings",
+    "policyname": "bookings_admin_all",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "is_admin()"
+  },
+  {
+    "tablename": "bookings",
+    "policyname": "bookings_owner_insert",
+    "policy_type": "PERMISSIVE",
+    "operation": "INSERT",
+    "applicable_roles": "public",
+    "using_expression": "No condition",
+    "with_check_expression": "(auth.uid() = user_id)"
+  },
+  {
+    "tablename": "bookings",
+    "policyname": "bookings_owner_select",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "((auth.uid() = user_id) OR is_admin())",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "bookings",
+    "policyname": "bookings_owner_update",
+    "policy_type": "PERMISSIVE",
+    "operation": "UPDATE",
+    "applicable_roles": "public",
+    "using_expression": "(auth.uid() = user_id)",
+    "with_check_expression": "(auth.uid() = user_id)"
+  },
+  {
+    "tablename": "destinations",
+    "policyname": "dest_admin_create",
+    "policy_type": "PERMISSIVE",
+    "operation": "INSERT",
+    "applicable_roles": "public",
+    "using_expression": "No condition",
+    "with_check_expression": "is_admin()"
+  },
+  {
+    "tablename": "destinations",
+    "policyname": "dest_admin_read_all",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "destinations",
+    "policyname": "dest_admin_update",
+    "policy_type": "PERMISSIVE",
+    "operation": "UPDATE",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "is_admin()"
+  },
+  {
+    "tablename": "destinations",
+    "policyname": "dest_public_read",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "(is_published = true)",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "destinations",
+    "policyname": "dest_staff_update",
+    "policy_type": "PERMISSIVE",
+    "operation": "UPDATE",
+    "applicable_roles": "public",
+    "using_expression": "is_staff_or_admin()",
+    "with_check_expression": "is_staff_or_admin()"
+  },
+  {
+    "tablename": "destinations",
+    "policyname": "dest_super_admin_delete",
+    "policy_type": "PERMISSIVE",
+    "operation": "DELETE",
+    "applicable_roles": "public",
+    "using_expression": "is_super_admin()",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "destinations",
+    "policyname": "destinations_admin_create",
+    "policy_type": "PERMISSIVE",
+    "operation": "INSERT",
+    "applicable_roles": "public",
+    "using_expression": "No condition",
+    "with_check_expression": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.is_admin = true) AND (p.admin_level >= 2))))"
+  },
+  {
+    "tablename": "destinations",
+    "policyname": "destinations_public_read",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "(is_published = true)",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "destinations",
+    "policyname": "destinations_service_role_all",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "true",
+    "with_check_expression": "true"
+  },
+  {
+    "tablename": "destinations",
+    "policyname": "destinations_staff_read",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.is_admin = true) AND (p.admin_level >= 1))))",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "destinations",
+    "policyname": "destinations_staff_update",
+    "policy_type": "PERMISSIVE",
+    "operation": "UPDATE",
+    "applicable_roles": "public",
+    "using_expression": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.is_admin = true) AND (p.admin_level >= 1))))",
+    "with_check_expression": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.is_admin = true) AND (p.admin_level >= 1))))"
+  },
+  {
+    "tablename": "destinations",
+    "policyname": "destinations_super_admin_delete",
+    "policy_type": "PERMISSIVE",
+    "operation": "DELETE",
+    "applicable_roles": "public",
+    "using_expression": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.id = auth.uid()) AND (p.is_admin = true) AND (p.admin_level >= 3))))",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "experiences",
+    "policyname": "Public experiences are viewable by everyone",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "(is_active = true)",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "faqs",
+    "policyname": "Authenticated users can manage FAQs",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "(auth.role() = 'authenticated'::text)",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "faqs",
+    "policyname": "FAQs are viewable by everyone",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "(is_active = true)",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "otp_codes",
+    "policyname": "System can manage OTP codes",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "true",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "otp_codes",
+    "policyname": "Users can view their own OTP codes",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "(((email)::text = (auth.jwt() ->> 'email'::text)) OR is_admin())",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "package_item_options",
+    "policyname": "item_opts_admin_write",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "is_admin()"
+  },
+  {
+    "tablename": "package_item_options",
+    "policyname": "item_opts_public_read",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "(is_active = true)",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "package_items",
+    "policyname": "items_admin_write",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "is_admin()"
+  },
+  {
+    "tablename": "package_items",
+    "policyname": "items_public_read",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "true",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "package_option_mappings",
+    "policyname": "pkg_option_map_admin_write",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "is_admin()"
+  },
+  {
+    "tablename": "package_option_mappings",
+    "policyname": "pkg_option_map_public_read",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "true",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "package_partner_services",
+    "policyname": "pps_admin_all",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "is_admin()"
+  },
+  {
+    "tablename": "package_partner_services",
+    "policyname": "pps_public_read",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "(EXISTS ( SELECT 1\n   FROM packages p\n  WHERE ((p.id = package_partner_services.package_id) AND (p.is_published = true))))",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "packages",
+    "policyname": "pkg_admin_write",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "is_admin()"
+  },
+  {
+    "tablename": "packages",
+    "policyname": "pkg_public_read",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "(is_published = true)",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "partners",
+    "policyname": "partners_admin_write",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "is_admin()"
+  },
+  {
+    "tablename": "partners",
+    "policyname": "partners_public_read",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "true",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "plan_requests",
+    "policyname": "Anyone can create plan requests",
+    "policy_type": "PERMISSIVE",
+    "operation": "INSERT",
+    "applicable_roles": "public",
+    "using_expression": "No condition",
+    "with_check_expression": "true"
+  },
+  {
+    "tablename": "plan_requests",
+    "policyname": "Users can view their own plan requests",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "((auth.uid())::text = (contact_email)::text)",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "profiles",
+    "policyname": "Allow admin email check",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "(EXISTS ( SELECT 1\n   FROM profiles p2\n  WHERE ((p2.email = profiles.email) AND (p2.is_admin = true))))",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "profiles",
+    "policyname": "profile_self_select",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "((auth.uid() = id) OR is_admin())",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "profiles",
+    "policyname": "profile_self_update",
+    "policy_type": "PERMISSIVE",
+    "operation": "UPDATE",
+    "applicable_roles": "public",
+    "using_expression": "(auth.uid() = id)",
+    "with_check_expression": "(auth.uid() = id)"
+  },
+  {
+    "tablename": "profiles",
+    "policyname": "profiles_admin_all",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "is_admin()"
+  },
+  {
+    "tablename": "reviews",
+    "policyname": "reviews_admin_all",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "is_admin()"
+  },
+  {
+    "tablename": "reviews",
+    "policyname": "reviews_insert_if_eligible",
+    "policy_type": "PERMISSIVE",
+    "operation": "INSERT",
+    "applicable_roles": "public",
+    "using_expression": "No condition",
+    "with_check_expression": "((can_review(booking_id) = true) AND (auth.uid() = user_id))"
+  },
+  {
+    "tablename": "reviews",
+    "policyname": "reviews_owner_update",
+    "policy_type": "PERMISSIVE",
+    "operation": "UPDATE",
+    "applicable_roles": "public",
+    "using_expression": "(auth.uid() = user_id)",
+    "with_check_expression": "(auth.uid() = user_id)"
+  },
+  {
+    "tablename": "reviews",
+    "policyname": "reviews_public_read",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "true",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "role_permissions",
+    "policyname": "Admins can manage role permissions",
+    "policy_type": "PERMISSIVE",
+    "operation": "ALL",
+    "applicable_roles": "public",
+    "using_expression": "is_admin()",
+    "with_check_expression": "No check"
+  },
+  {
+    "tablename": "role_permissions",
+    "policyname": "Authenticated users can view role permissions",
+    "policy_type": "PERMISSIVE",
+    "operation": "SELECT",
+    "applicable_roles": "public",
+    "using_expression": "(auth.role() = 'authenticated'::text)",
+    "with_check_expression": "No check"
+  }
+]

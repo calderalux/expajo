@@ -24,9 +24,9 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
   const [isFavorited, setIsFavorited] = useState(false);
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-NG', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'NGN',
+      currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price);
@@ -60,7 +60,6 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
           isOpen={isOpen}
           onClose={onClose}
           size="xl"
-          // className="max-w-4xl"
         >
           <div className="relative">
             {/* Close Button */}

@@ -1,0 +1,11 @@
+id,name,code,description,item_type,created_at,updated_at
+1,Luxury Hotel Accommodation,HOTEL-001,Premium hotel rooms with all amenities,accommodation,2024-01-15T10:00:00Z,2024-01-15T10:00:00Z
+2,Airport Transfer Service,TRANS-001,Private vehicle transfer from/to airport,airport_transfer,2024-01-15T10:00:00Z,2024-01-15T10:00:00Z
+3,Cultural Heritage Tour,TOUR-001,Guided tour of historical sites and museums,culture,2024-01-15T10:00:00Z,2024-01-15T10:00:00Z
+4,Fine Dining Experience,DINE-001,Multi-course meal at premium restaurant,culinary,2024-01-15T10:00:00Z,2024-01-15T10:00:00Z
+5,Adventure Safari,ADV-001,Wildlife safari with professional guide,adventure,2024-01-15T10:00:00Z,2024-01-15T10:00:00Z
+6,Spa & Wellness Package,WELL-001,Relaxing spa treatments and wellness activities,wellness,2024-01-15T10:00:00Z,2024-01-15T10:00:00Z
+7,Beach Resort Access,BEACH-001,Access to private beach resort facilities,beach_resort,2024-01-15T10:00:00Z,2024-01-15T10:00:00Z
+8,Nightlife Experience,NIGHT-001,Exclusive access to premium nightlife venues,night_life,2024-01-15T10:00:00Z,2024-01-15T10:00:00Z
+9,Art Gallery Visit,ART-001,Private tour of contemporary art galleries,art_fashion,2024-01-15T10:00:00Z,2024-01-15T10:00:00Z
+10,Live Music Concert,LIVE-001,Tickets to exclusive live music performances,live_events,2024-01-15T10:00:00Z,2024-01-15T10:00:00Z

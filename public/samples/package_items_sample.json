@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Luxury Hotel Accommodation",
+    "code": "HOTEL-001",
+    "description": "Premium hotel rooms with all amenities",
+    "item_type": "accommodation"
+  },
+  {
+    "name": "Airport Transfer Service",
+    "code": "TRANS-001",
+    "description": "Private vehicle transfer from/to airport",
+    "item_type": "airport_transfer"
+  },
+  {
+    "name": "Cultural Heritage Tour",
+    "code": "TOUR-001",
+    "description": "Guided tour of historical sites and museums",
+    "item_type": "culture"
+  },
+  {
+    "name": "Fine Dining Experience",
+    "code": "DINE-001",
+    "description": "Multi-course meal at premium restaurant",
+    "item_type": "culinary"
+  },
+  {
+    "name": "Adventure Safari",
+    "code": "ADV-001",
+    "description": "Wildlife safari with professional guide",
+    "item_type": "adventure"
+  },
+  {
+    "name": "Spa & Wellness Package",
+    "code": "WELL-001",
+    "description": "Relaxing spa treatments and wellness activities",
+    "item_type": "wellness"
+  },
+  {
+    "name": "Beach Resort Access",
+    "code": "BEACH-001",
+    "description": "Access to private beach resort facilities",
+    "item_type": "beach_resort"
+  },
+  {
+    "name": "Nightlife Experience",
+    "code": "NIGHT-001",
+    "description": "Exclusive access to premium nightlife venues",
+    "item_type": "night_life"
+  },
+  {
+    "name": "Art Gallery Visit",
+    "code": "ART-001",
+    "description": "Private tour of contemporary art galleries",
+    "item_type": "art_fashion"
+  },
+  {
+    "name": "Live Music Concert",
+    "code": "LIVE-001",
+    "description": "Tickets to exclusive live music performances",
+    "item_type": "live_events"
+  }
+]

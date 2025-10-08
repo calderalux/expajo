@@ -2,23 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSupabase } from '@/lib/providers';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import {
-  Calendar,
-  MapPin,
-  Star,
-  Clock,
-  CheckCircle,
-  XCircle,
-} from 'lucide-react';
+import { useSupabase } from '../../../lib/providers';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/Card';
+import { Button } from '../../../components/ui/Button';
+import { Calendar, MapPin, Star, Clock, CheckCircle, XCircle } from 'lucide-react';
 import Image from 'next/image';
 
 interface Booking {

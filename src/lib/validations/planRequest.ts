@@ -1,38 +1,13 @@
 import { z } from 'zod';
 
-// Nigerian states validation
-const nigerianStates = [
-  'abuja',
-  'lagos',
-  'calabar',
-  'kano',
-  'ibadan',
-  'port-harcourt',
-  'benin',
-  'kaduna',
-  'maiduguri',
-  'zaria',
-  'aba',
-  'jos',
-  'ilorin',
-  'oyo',
-  'enugu',
-  'abeokuta',
-  'sokoto',
-  'onitsha',
-  'warri',
-  'akure',
-] as const;
+// Dynamic destinations will be fetched from API
+// This will be populated at runtime
 
 // Plan request form schema using Zod - core fields only
 export const planRequestSchema = z.object({
   location: z
     .string()
-    .min(1, 'Location is required')
-    .refine(
-      (val) => nigerianStates.includes(val.toLowerCase() as any),
-      'Please select a valid Nigerian location'
-    ),
+    .min(1, 'Location is required'),
   travel_dates: z
     .array(
       z.union([
@@ -102,6 +77,7 @@ export interface FormFieldConfig {
 }
 
 // Form field configurations - core fields only
+// Note: location options will be populated dynamically from API
 export const planRequestFields: FormFieldConfig[] = [
   {
     name: 'location',
@@ -109,10 +85,7 @@ export const planRequestFields: FormFieldConfig[] = [
     label: 'Destination',
     placeholder: 'Select your destination',
     required: true,
-    options: nigerianStates.map((state) => ({
-      value: state,
-      label: state.charAt(0).toUpperCase() + state.slice(1).replace('-', ' '),
-    })),
+    options: [], // Will be populated dynamically
   },
   {
     name: 'travel_dates',

@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Layout } from '@/components/layout/Layout';
 import { DestinationCard } from '@/components/ui/DestinationCard';
@@ -11,19 +11,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { CategoryFilter } from '@/components/ui/CategoryFilter';
-import {
-  Search,
-  Filter,
-  MapPin,
-  Globe,
-  Calendar,
-  Thermometer,
-} from 'lucide-react';
-import {
-  DestinationService,
-  Destination,
-  DestinationFilters,
-} from '@/lib/services/destinations';
+import { Search, Filter, MapPin, Globe, Calendar, Thermometer } from 'lucide-react';
+import { Destination, DestinationFilters } from '@/lib/services/destinations';
 import { motion } from 'framer-motion';
 
 interface DestinationListState {
@@ -34,17 +23,6 @@ interface DestinationListState {
   currentPage: number;
   totalCount: number;
 }
-
-const countries = [
-  'All destinations',
-  'Nigeria',
-  'Ghana',
-  'South Africa',
-  'Kenya',
-  'Morocco',
-  'Egypt',
-  'Tanzania',
-];
 
 const sortOptions = [
   { value: 'title-asc', label: 'Name A-Z' },
@@ -66,8 +44,8 @@ function DestinationListContent() {
 
   const [filters, setFilters] = useState<DestinationFilters>({
     country: searchParams.get('country') || undefined,
-    location: searchParams.get('location') || undefined,
-    isFeatured: searchParams.get('featured') === 'true' ? true : undefined,
+    region: searchParams.get('location') || undefined,
+    featured: searchParams.get('featured') === 'true' ? true : undefined,
   });
 
   const [searchTerm, setSearchTerm] = useState(
@@ -80,44 +58,62 @@ function DestinationListContent() {
   const [selectedDestination, setSelectedDestination] =
     useState<Destination | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [countries, setCountries] = useState<string[]>(['All destinations']);
+  const [countriesLoading, setCountriesLoading] = useState(true);
 
   // Parse sort option
   const getSortOptions = (sortValue: string) => {
     const [field, order] = sortValue.split('-');
+    // Map frontend sort values to backend field names
+    const fieldMap: Record<string, 'created_at' | 'name' | 'region' | 'avg_rating' | 'package_count'> = {
+      'title': 'name',
+      'location': 'region',
+      'created': 'created_at',
+    };
     return {
-      field: field as 'created_at' | 'title' | 'location',
+      field: fieldMap[field] || 'name',
       order: order as 'asc' | 'desc',
     };
   };
 
   // Fetch destinations
-  const fetchDestinations = async (
-    page: number = 1,
-    reset: boolean = false
-  ) => {
+  const fetchDestinations = useCallback(async (page: number = 1, reset: boolean = false) => {
     try {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       const sortOptions = getSortOptions(sortBy);
-      const { data, error } = await DestinationService.getDestinations(
-        filters,
-        sortOptions,
-        12 // Limit per page
-      );
-
-      if (error) {
-        throw new Error(error);
+      
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (filters.country && filters.country !== 'All destinations') {
+        params.append('country', filters.country);
       }
+      if (filters.region) {
+        params.append('region', filters.region);
+      }
+      if (filters.featured !== undefined) {
+        params.append('featured', filters.featured.toString());
+      }
+      params.append('limit', '12');
+      params.append('sortField', sortOptions.field);
+      params.append('sortOrder', sortOptions.order);
+
+      const response = await fetch(`/api/destinations?${params.toString()}`);
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch destinations');
+      }
+
+      const data = result.data || [];
 
       setState((prev) => ({
         ...prev,
-        destinations: reset
-          ? data || []
-          : [...prev.destinations, ...(data || [])],
+        destinations: reset ? data : [...prev.destinations, ...data],
         isLoading: false,
-        hasMore: (data || []).length === 12,
+        hasMore: data.length === 12,
         currentPage: page,
-        totalCount: data?.length || 0,
+        totalCount: data.length,
       }));
     } catch (err: any) {
       setState((prev) => ({
@@ -126,7 +122,7 @@ function DestinationListContent() {
         error: err.message || 'Failed to fetch destinations',
       }));
     }
-  };
+  }, [filters, sortBy]);
 
   // Load more destinations
   const loadMore = () => {
@@ -138,7 +134,7 @@ function DestinationListContent() {
   // Handle search
   const handleSearch = () => {
     if (searchTerm.trim()) {
-      setFilters((prev) => ({ ...prev, location: searchTerm.trim() }));
+      setFilters(prev => ({ ...prev, region: searchTerm.trim() }));
     }
     fetchDestinations(1, true);
   };
@@ -168,14 +164,44 @@ function DestinationListContent() {
   // Initial load
   useEffect(() => {
     fetchDestinations(1, true);
+  }, [fetchDestinations]);
+
+  // Fetch countries for filter
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const response = await fetch('/api/destinations/countries');
+        const result = await response.json();
+        if (result.data) {
+          setCountries(['All destinations', ...result.data]);
+        }
+      } catch (error) {
+        console.error('Error fetching countries:', error);
+        // Fallback to static countries
+        setCountries([
+          'All destinations',
+          'Nigeria',
+          'Ghana',
+          'South Africa',
+          'Kenya',
+          'Morocco',
+          'Egypt',
+          'Tanzania',
+        ]);
+      } finally {
+        setCountriesLoading(false);
+      }
+    };
+
+    fetchCountries();
   }, []);
 
   // Update URL when filters change
   useEffect(() => {
     const params = new URLSearchParams();
     if (filters.country) params.set('country', filters.country);
-    if (filters.location) params.set('location', filters.location);
-    if (filters.isFeatured) params.set('featured', 'true');
+    if (filters.region) params.set('location', filters.region);
+    if (filters.featured) params.set('featured', 'true');
     if (searchTerm) params.set('search', searchTerm);
     if (sortBy) params.set('sort', sortBy);
 
@@ -235,12 +261,22 @@ function DestinationListContent() {
 
             {/* Country Filter */}
             <div className="bg-gray-50 rounded-2xl p-6">
-              <CategoryFilter
-                categories={countries}
-                activeCategory={selectedCountry}
-                onCategoryChange={handleCountryChange}
-                className="justify-center flex-wrap"
-              />
+              {countriesLoading ? (
+                <div className="flex justify-center">
+                  <div className="animate-pulse space-x-4 flex">
+                    {[...Array(4)].map((_, index) => (
+                      <div key={index} className="h-10 bg-gray-200 rounded-full w-24"></div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <CategoryFilter
+                  categories={countries}
+                  activeCategory={selectedCountry}
+                  onCategoryChange={handleCountryChange}
+                  className="justify-center flex-wrap"
+                />
+              )}
             </div>
 
             {/* Results Count and Sort */}

@@ -1,23 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { MapPin, Calendar, Users } from 'lucide-react';
+import { FormAction } from '@/components/forms/DynamicForm';
 import { PlanYourExperienceModal } from '@/components/modals/PlanYourExperienceModal';
 import {
-  TanStackDynamicForm,
   FormFieldConfig,
-  FormAction,
-} from '@/components/forms/TanStackDynamicForm';
+  TanStackDynamicForm,
+} from '../forms/TanStackDynamicForm';
 import {
-  PlanRequestService,
-  PlanRequestFormData,
-} from '@/lib/services/planRequests';
-import {
-  planRequestSchema,
   planRequestFields,
-  PlanRequestFormData as PlanRequestData,
+  planRequestSchema,
 } from '@/lib/validations/planRequest';
 
 const stats = [
@@ -41,15 +36,53 @@ const stats = [
 
 export const PlanFormSection: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [destinations, setDestinations] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [destinationsLoading, setDestinationsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState<PlanRequestData | null>(null);
+  const [formData, setFormData] = useState<any>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchDestinations = async () => {
+      try {
+        const response = await fetch('/api/destinations/public');
+        const result = await response.json();
+        if (result.success && result.data) {
+          const destinationOptions = result.data.map(
+            (dest: { name: string; country: string }) => ({
+              value: dest.name.toLowerCase().replace(/\s+/g, '-'),
+              label: `${dest.name}, ${dest.country}`,
+            })
+          );
+          setDestinations(destinationOptions);
+        }
+      } catch (error) {
+        console.error('Error fetching destinations:', error);
+        // Fallback to static data
+        // setDestinations([
+        //   { value: 'abuja', label: 'Abuja, Nigeria' },
+        //   { value: 'lagos', label: 'Lagos, Nigeria' },
+        //   { value: 'calabar', label: 'Calabar, Nigeria' },
+        //   { value: 'kano', label: 'Kano, Nigeria' },
+        //   { value: 'ibadan', label: 'Ibadan, Nigeria' },
+        // ]);
+      } finally {
+        setDestinationsLoading(false);
+      }
+    };
+
+    fetchDestinations();
+  }, []);
 
   // Core form fields using TanStack Form + Zod
   const formFields: FormFieldConfig[] = [
     {
       ...planRequestFields[0], // location
       icon: <MapPin size={20} className="text-gray-400" />,
+      options: destinations, // Use destinations from API
+      placeholder: destinationsLoading ? 'Loading destinations...' : 'Select your destination',
     },
     {
       ...planRequestFields[1], // travel_date
@@ -82,13 +115,9 @@ export const PlanFormSection: React.FC = () => {
     },
   ];
 
-  const handleFormSubmit = async (data: PlanRequestData) => {
+  const handleFormSubmit = async (data: any) => {
     // Store the form data and open the three-step modal
     console.log('Form is valid, opening three-step modal with data:', data);
-    console.log('Travel dates type:', typeof data.travel_dates);
-    console.log('Travel dates value:', data.travel_dates);
-    console.log('First date type:', typeof data.travel_dates[0]);
-    console.log('First date value:', data.travel_dates[0]);
     setFormData(data);
     setIsModalOpen(true);
   };
@@ -112,20 +141,23 @@ export const PlanFormSection: React.FC = () => {
         consent: data.step3.consent,
       };
 
-      // Submit to database using the combined data
-      const { data: result, error } =
-        await PlanRequestService.createPlanRequest(combinedData);
+      const response = await fetch('/api/plan-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(combinedData),
+      });
 
-      if (error) {
-        console.error('Error submitting plan request:', error);
-        // TODO: Show error message to user using toast
+      const result = await response.json();
+
+      if (!result.success) {
+        console.error('Error submitting plan request:', result.error);
+        // TODO: Show error message to user
         return;
       }
 
-      console.log('Plan request submitted successfully:', result);
-      // TODO: Show success message using toast
-      // TODO: Send email notification
-      // TODO: Redirect to planning page or show confirmation
+      // Submit to database using the combined data
     } catch (error) {
       console.error('Error submitting plan request:', error);
       // TODO: Show error message to user using toast
