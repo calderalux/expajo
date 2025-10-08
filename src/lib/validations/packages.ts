@@ -36,7 +36,9 @@ export const packageFiltersSchema = z.object({
   is_published: z.boolean().optional(),
   min_price: z.number().optional(),
   max_price: z.number().optional(),
-  sort_by: z.enum(['title', 'base_price', 'created_at', 'updated_at', 'avg_rating']).default('created_at'),
+  sort_by: z
+    .enum(['title', 'base_price', 'created_at', 'updated_at', 'avg_rating'])
+    .default('created_at'),
   sort_order: z.enum(['asc', 'desc']).default('desc'),
   limit: z.number().int().min(1).default(50),
   offset: z.number().int().min(0).default(0),
@@ -45,3 +47,22 @@ export const packageFiltersSchema = z.object({
 export type PackageCreateData = z.infer<typeof packageCreateSchema>;
 export type PackageUpdateData = z.infer<typeof packageUpdateSchema>;
 export type PackageFilters = z.infer<typeof packageFiltersSchema>;
+
+// Package categories for form options
+export const packageCategories = [
+  { value: 'adventure', label: 'Adventure' },
+  { value: 'cultural', label: 'Cultural' },
+  { value: 'luxury', label: 'Luxury' },
+  { value: 'beach', label: 'Beach' },
+  { value: 'city', label: 'City' },
+  { value: 'nature', label: 'Nature' },
+];
+
+// Currency options for form
+export const currencies = [
+  { value: 'USD', label: 'USD (US Dollar)' },
+  { value: 'EUR', label: 'EUR (Euro)' },
+  { value: 'GBP', label: 'GBP (British Pound)' },
+  { value: 'CAD', label: 'CAD (Canadian Dollar)' },
+  { value: 'AUD', label: 'AUD (Australian Dollar)' },
+];

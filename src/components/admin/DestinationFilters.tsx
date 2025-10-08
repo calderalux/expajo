@@ -22,14 +22,15 @@ import {
   ScrollArea,
   Checkbox,
   Box,
-  Flex
+  Flex,
 } from '@mantine/core';
 import { DatePicker } from '@mantine/dates';
 import { useDisclosure } from '@mantine/hooks';
-import { 
-  IconFilter, 
-  IconX, 
-  IconSearch, 
+import dayjs from 'dayjs';
+import {
+  IconFilter,
+  IconX,
+  IconSearch,
   IconCalendar,
   IconMapPin,
   IconStar,
@@ -39,7 +40,7 @@ import {
   IconSettings,
   IconRefresh,
   IconDownload,
-  IconUpload
+  IconUpload,
 } from '@tabler/icons-react';
 import { cn } from '@/utils/cn';
 
@@ -90,11 +91,11 @@ const CURRENCY_OPTIONS = [
   { value: 'NGN', label: 'NGN' },
 ];
 
-export function AdvancedFilterModal({ 
-  isOpen, 
-  onClose, 
-  onApplyFilters, 
-  initialFilters 
+export function AdvancedFilterModal({
+  isOpen,
+  onClose,
+  onApplyFilters,
+  initialFilters,
 }: AdvancedFilterProps) {
   const [filters, setFilters] = useState<FilterState>(
     initialFilters || {
@@ -149,8 +150,13 @@ export function AdvancedFilterModal({
     if (filters.featured !== null) count++;
     if (filters.currency.length > 0) count++;
     if (filters.dateRange.from || filters.dateRange.to) count++;
-    if (filters.ratingRange.min !== null || filters.ratingRange.max !== null) count++;
-    if (filters.packageCountRange.min !== null || filters.packageCountRange.max !== null) count++;
+    if (filters.ratingRange.min !== null || filters.ratingRange.max !== null)
+      count++;
+    if (
+      filters.packageCountRange.min !== null ||
+      filters.packageCountRange.max !== null
+    )
+      count++;
     return count;
   };
 
@@ -174,28 +180,36 @@ export function AdvancedFilterModal({
     >
       <div className="relative">
         <LoadingOverlay visible={isLoading} />
-        
+
         <Stack gap="lg">
           {/* Search */}
           <div>
-            <Text size="sm" fw={500} mb="xs">Search</Text>
+            <Text size="sm" fw={500} mb="xs">
+              Search
+            </Text>
             <TextInput
               placeholder="Search destinations..."
               leftSection={<IconSearch size={16} />}
               value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, search: e.target.value }))
+              }
             />
           </div>
 
           {/* Location Filters */}
           <div>
-            <Text size="sm" fw={500} mb="xs">Location</Text>
+            <Text size="sm" fw={500} mb="xs">
+              Location
+            </Text>
             <Group grow>
               <MultiSelect
                 placeholder="Select countries"
                 data={[]} // Will be populated from API
                 value={filters.country}
-                onChange={(value) => setFilters(prev => ({ ...prev, country: value }))}
+                onChange={(value) =>
+                  setFilters((prev) => ({ ...prev, country: value }))
+                }
                 searchable
                 clearable
                 leftSection={<IconMapPin size={16} />}
@@ -204,7 +218,9 @@ export function AdvancedFilterModal({
                 placeholder="Select regions"
                 data={[]} // Will be populated from API
                 value={filters.region}
-                onChange={(value) => setFilters(prev => ({ ...prev, region: value }))}
+                onChange={(value) =>
+                  setFilters((prev) => ({ ...prev, region: value }))
+                }
                 searchable
                 clearable
                 leftSection={<IconWorld size={16} />}
@@ -214,7 +230,9 @@ export function AdvancedFilterModal({
 
           {/* Status Filters */}
           <div>
-            <Text size="sm" fw={500} mb="xs">Status & Features</Text>
+            <Text size="sm" fw={500} mb="xs">
+              Status & Features
+            </Text>
             <Group grow>
               <MultiSelect
                 placeholder="Select status"
@@ -223,7 +241,9 @@ export function AdvancedFilterModal({
                   { value: 'draft', label: 'Draft' },
                 ]}
                 value={filters.status}
-                onChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+                onChange={(value) =>
+                  setFilters((prev) => ({ ...prev, status: value }))
+                }
                 clearable
               />
               <Select
@@ -232,11 +252,15 @@ export function AdvancedFilterModal({
                   { value: 'true', label: 'Featured' },
                   { value: 'false', label: 'Not Featured' },
                 ]}
-                value={filters.featured === null ? null : filters.featured.toString()}
-                onChange={(value) => setFilters(prev => ({ 
-                  ...prev, 
-                  featured: value === null ? null : value === 'true' 
-                }))}
+                value={
+                  filters.featured === null ? null : filters.featured.toString()
+                }
+                onChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    featured: value === null ? null : value === 'true',
+                  }))
+                }
                 clearable
                 leftSection={<IconStar size={16} />}
               />
@@ -245,12 +269,16 @@ export function AdvancedFilterModal({
 
           {/* Currency */}
           <div>
-            <Text size="sm" fw={500} mb="xs">Currency</Text>
+            <Text size="sm" fw={500} mb="xs">
+              Currency
+            </Text>
             <MultiSelect
               placeholder="Select currencies"
               data={CURRENCY_OPTIONS}
               value={filters.currency}
-              onChange={(value) => setFilters(prev => ({ ...prev, currency: value }))}
+              onChange={(value) =>
+                setFilters((prev) => ({ ...prev, currency: value }))
+              }
               clearable
               leftSection={<IconCurrencyDollar size={16} />}
             />
@@ -258,28 +286,48 @@ export function AdvancedFilterModal({
 
           {/* Date Range */}
           <div>
-            <Text size="sm" fw={500} mb="xs">Date Range</Text>
+            <Text size="sm" fw={500} mb="xs">
+              Date Range
+            </Text>
             <Group grow>
               <DatePicker
-                value={filters.dateRange.from}
-                onChange={(date: Date | null) => setFilters(prev => ({ 
-                  ...prev, 
-                  dateRange: { ...prev.dateRange, from: date } 
-                }))}
+                value={
+                  filters.dateRange.from
+                    ? filters.dateRange.from.toISOString().split('T')[0]
+                    : null
+                }
+                onChange={(value: string | null) => {
+                  const date = value ? new Date(value) : null;
+                  setFilters((prev) => ({
+                    ...prev,
+                    dateRange: { ...prev.dateRange, from: date },
+                  }));
+                }}
+                minDate={dayjs().add(1, 'day').toDate()}
               />
               <DatePicker
-                value={filters.dateRange.to}
-                onChange={(date: Date | null) => setFilters(prev => ({ 
-                  ...prev, 
-                  dateRange: { ...prev.dateRange, to: date } 
-                }))}
+                value={
+                  filters.dateRange.to
+                    ? filters.dateRange.to.toISOString().split('T')[0]
+                    : null
+                }
+                onChange={(value: string | null) => {
+                  const date = value ? new Date(value) : null;
+                  setFilters((prev) => ({
+                    ...prev,
+                    dateRange: { ...prev.dateRange, to: date },
+                  }));
+                }}
+                minDate={dayjs().add(1, 'day').toDate()}
               />
             </Group>
           </div>
 
           {/* Rating Range */}
           <div>
-            <Text size="sm" fw={500} mb="xs">Rating Range</Text>
+            <Text size="sm" fw={500} mb="xs">
+              Rating Range
+            </Text>
             <Group grow>
               <NumberInput
                 placeholder="Min rating"
@@ -287,10 +335,15 @@ export function AdvancedFilterModal({
                 max={5}
                 step={0.1}
                 value={filters.ratingRange.min || undefined}
-                onChange={(value) => setFilters(prev => ({ 
-                  ...prev, 
-                  ratingRange: { ...prev.ratingRange, min: typeof value === 'number' ? value : null } 
-                }))}
+                onChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    ratingRange: {
+                      ...prev.ratingRange,
+                      min: typeof value === 'number' ? value : null,
+                    },
+                  }))
+                }
                 leftSection={<IconStar size={16} />}
               />
               <NumberInput
@@ -299,10 +352,15 @@ export function AdvancedFilterModal({
                 max={5}
                 step={0.1}
                 value={filters.ratingRange.max || undefined}
-                onChange={(value) => setFilters(prev => ({ 
-                  ...prev, 
-                  ratingRange: { ...prev.ratingRange, max: typeof value === 'number' ? value : null } 
-                }))}
+                onChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    ratingRange: {
+                      ...prev.ratingRange,
+                      max: typeof value === 'number' ? value : null,
+                    },
+                  }))
+                }
                 leftSection={<IconStar size={16} />}
               />
             </Group>
@@ -310,26 +368,38 @@ export function AdvancedFilterModal({
 
           {/* Package Count Range */}
           <div>
-            <Text size="sm" fw={500} mb="xs">Package Count Range</Text>
+            <Text size="sm" fw={500} mb="xs">
+              Package Count Range
+            </Text>
             <Group grow>
               <NumberInput
                 placeholder="Min packages"
                 min={0}
                 value={filters.packageCountRange.min || undefined}
-                onChange={(value) => setFilters(prev => ({ 
-                  ...prev, 
-                  packageCountRange: { ...prev.packageCountRange, min: typeof value === 'number' ? value : null } 
-                }))}
+                onChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    packageCountRange: {
+                      ...prev.packageCountRange,
+                      min: typeof value === 'number' ? value : null,
+                    },
+                  }))
+                }
                 leftSection={<IconTrendingUp size={16} />}
               />
               <NumberInput
                 placeholder="Max packages"
                 min={0}
                 value={filters.packageCountRange.max || undefined}
-                onChange={(value) => setFilters(prev => ({ 
-                  ...prev, 
-                  packageCountRange: { ...prev.packageCountRange, max: typeof value === 'number' ? value : null } 
-                }))}
+                onChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    packageCountRange: {
+                      ...prev.packageCountRange,
+                      max: typeof value === 'number' ? value : null,
+                    },
+                  }))
+                }
                 leftSection={<IconTrendingUp size={16} />}
               />
             </Group>
@@ -337,13 +407,17 @@ export function AdvancedFilterModal({
 
           {/* Sorting */}
           <div>
-            <Text size="sm" fw={500} mb="xs">Sorting</Text>
+            <Text size="sm" fw={500} mb="xs">
+              Sorting
+            </Text>
             <Group grow>
               <Select
                 placeholder="Sort by"
                 data={SORT_OPTIONS}
                 value={filters.sortBy}
-                onChange={(value) => setFilters(prev => ({ ...prev, sortBy: value || 'name' }))}
+                onChange={(value) =>
+                  setFilters((prev) => ({ ...prev, sortBy: value || 'name' }))
+                }
               />
               <Select
                 placeholder="Order"
@@ -352,7 +426,12 @@ export function AdvancedFilterModal({
                   { value: 'desc', label: 'Descending' },
                 ]}
                 value={filters.sortOrder}
-                onChange={(value) => setFilters(prev => ({ ...prev, sortOrder: value as 'asc' | 'desc' }))}
+                onChange={(value) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    sortOrder: value as 'asc' | 'desc',
+                  }))
+                }
               />
             </Group>
           </div>
@@ -372,9 +451,7 @@ export function AdvancedFilterModal({
               <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button onClick={handleApplyFilters}>
-                Apply Filters
-              </Button>
+              <Button onClick={handleApplyFilters}>Apply Filters</Button>
             </Group>
           </Group>
         </Stack>
@@ -401,7 +478,7 @@ export function BulkOperationsModal({
   onBulkPublish,
   onBulkDelete,
   onBulkExport,
-  onBulkImport
+  onBulkImport,
 }: BulkOperationsModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [operation, setOperation] = useState<string | null>(null);
@@ -409,7 +486,7 @@ export function BulkOperationsModal({
   const handleOperation = async (op: string) => {
     setIsLoading(true);
     setOperation(op);
-    
+
     try {
       switch (op) {
         case 'publish':
@@ -446,14 +523,15 @@ export function BulkOperationsModal({
     >
       <div className="relative">
         <LoadingOverlay visible={isLoading} />
-        
+
         <Stack gap="md">
           <Alert
             icon={<IconSettings size={16} />}
             title="Bulk Operations"
             variant="light"
           >
-            You have {selectedCount} destination(s) selected. Choose an operation to perform.
+            You have {selectedCount} destination(s) selected. Choose an
+            operation to perform.
           </Alert>
 
           <div className="grid grid-cols-2 gap-4">
@@ -495,7 +573,9 @@ export function BulkOperationsModal({
           <Divider />
 
           <div>
-            <Text size="sm" fw={500} mb="xs">Import Destinations</Text>
+            <Text size="sm" fw={500} mb="xs">
+              Import Destinations
+            </Text>
             <input
               type="file"
               accept=".csv,.json,.xlsx"
@@ -539,7 +619,7 @@ export function QuickActionsToolbar({
   onBulkOperations,
   onRefresh,
   onExport,
-  onImport
+  onImport,
 }: QuickActionsToolbarProps) {
   return (
     <Card>
@@ -561,27 +641,15 @@ export function QuickActionsToolbar({
             Bulk Operations ({selectedCount})
           </Button>
         </Group>
-        
+
         <Group gap="sm">
-          <ActionIcon
-            variant="outline"
-            onClick={onRefresh}
-            title="Refresh"
-          >
+          <ActionIcon variant="outline" onClick={onRefresh} title="Refresh">
             <IconRefresh size={16} />
           </ActionIcon>
-          <ActionIcon
-            variant="outline"
-            onClick={onExport}
-            title="Export"
-          >
+          <ActionIcon variant="outline" onClick={onExport} title="Export">
             <IconDownload size={16} />
           </ActionIcon>
-          <ActionIcon
-            variant="outline"
-            onClick={onImport}
-            title="Import"
-          >
+          <ActionIcon variant="outline" onClick={onImport} title="Import">
             <IconUpload size={16} />
           </ActionIcon>
         </Group>

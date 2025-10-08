@@ -17,6 +17,7 @@ import {
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { cn } from '@/utils/cn';
+import dayjs from 'dayjs';
 import {
   step1Schema,
   step2Schema,
@@ -318,6 +319,7 @@ export const PlanYourExperienceModal: React.FC<
                   }
                   onBlur={fieldApi.handleBlur}
                   error={errorMessage}
+                  minDate={dayjs().add(1, 'day').toDate()}
                   styles={{
                     input: {
                       height: '3rem',
@@ -356,6 +358,7 @@ export const PlanYourExperienceModal: React.FC<
                   }
                   onBlur={fieldApi.handleBlur}
                   error={errorMessage}
+                  minDate={dayjs().add(1, 'day').toDate()}
                   styles={{
                     input: {
                       height: '3rem',

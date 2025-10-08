@@ -6,7 +6,7 @@ import { z } from 'zod';
 // GET /api/admin/packages/[id]/options - Get option mappings for a package
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authCheck = await checkAdminAuth(req);
@@ -14,15 +14,19 @@ export async function GET(
       return NextResponse.json(authCheck, { status: 401 });
     }
 
-    const packageId = params.id;
-    if (!packageId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Package ID is required',
-      }, { status: 400 });
+    const { id } = await params;
+    if (!id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Package ID is required',
+        },
+        { status: 400 }
+      );
     }
 
-    const optionMappings = await PackageOptionMappingService.getPackageOptionMappings(packageId);
+    const optionMappings =
+      await PackageOptionMappingService.getPackageOptionMappings(id);
 
     return NextResponse.json({
       success: true,
@@ -40,7 +44,7 @@ export async function GET(
 // POST /api/admin/packages/[id]/options - Add option to package
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authCheck = await checkAdminAuth(req);
@@ -48,16 +52,19 @@ export async function POST(
       return NextResponse.json(authCheck, { status: 401 });
     }
 
-    const packageId = params.id;
-    if (!packageId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Package ID is required',
-      }, { status: 400 });
+    const { id } = await params;
+    if (!id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Package ID is required',
+        },
+        { status: 400 }
+      );
     }
 
     const body = await req.json();
-    
+
     // Validate request body
     const addOptionSchema = z.object({
       option_id: z.string().min(1, 'Option ID is required'),
@@ -65,15 +72,18 @@ export async function POST(
 
     const validationResult = addOptionSchema.safeParse(body);
     if (!validationResult.success) {
-      return NextResponse.json({
-        success: false,
-        error: 'Validation failed',
-        details: validationResult.error.errors,
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation failed',
+          details: validationResult.error.errors,
+        },
+        { status: 400 }
+      );
     }
 
     const optionMapping = await PackageOptionMappingService.addOptionToPackage(
-      packageId,
+      id,
       validationResult.data.option_id
     );
 
@@ -94,7 +104,7 @@ export async function POST(
 // DELETE /api/admin/packages/[id]/options - Remove option from package
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authCheck = await checkAdminAuth(req);
@@ -102,25 +112,31 @@ export async function DELETE(
       return NextResponse.json(authCheck, { status: 401 });
     }
 
-    const packageId = params.id;
-    if (!packageId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Package ID is required',
-      }, { status: 400 });
+    const { id } = await params;
+    if (!id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Package ID is required',
+        },
+        { status: 400 }
+      );
     }
 
     const { searchParams } = new URL(req.url);
     const optionId = searchParams.get('option_id');
-    
+
     if (!optionId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Option ID is required',
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Option ID is required',
+        },
+        { status: 400 }
+      );
     }
 
-    await PackageOptionMappingService.removeOptionFromPackage(packageId, optionId);
+    await PackageOptionMappingService.removeOptionFromPackage(id, optionId);
 
     return NextResponse.json({
       success: true,
@@ -138,7 +154,7 @@ export async function DELETE(
 // PUT /api/admin/packages/[id]/options - Sync package options (replace all)
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authCheck = await checkAdminAuth(req);
@@ -146,16 +162,19 @@ export async function PUT(
       return NextResponse.json(authCheck, { status: 401 });
     }
 
-    const packageId = params.id;
-    if (!packageId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Package ID is required',
-      }, { status: 400 });
+    const { id } = await params;
+    if (!id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Package ID is required',
+        },
+        { status: 400 }
+      );
     }
 
     const body = await req.json();
-    
+
     // Validate request body
     const syncOptionsSchema = z.object({
       option_ids: z.array(z.string()).default([]),
@@ -163,15 +182,18 @@ export async function PUT(
 
     const validationResult = syncOptionsSchema.safeParse(body);
     if (!validationResult.success) {
-      return NextResponse.json({
-        success: false,
-        error: 'Validation failed',
-        details: validationResult.error.errors,
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation failed',
+          details: validationResult.error.errors,
+        },
+        { status: 400 }
+      );
     }
 
     await PackageOptionMappingService.syncPackageOptions(
-      packageId,
+      id,
       validationResult.data.option_ids
     );
 

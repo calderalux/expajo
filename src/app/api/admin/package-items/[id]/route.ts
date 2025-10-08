@@ -8,7 +8,7 @@ import { packageItemUpdateSchema } from '@/lib/validations/package-items';
 // GET /api/admin/package-items/[id] - Get package item by ID with caching
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authCheck = await checkAdminAuth(req);
@@ -16,8 +16,8 @@ export async function GET(
       return NextResponse.json(authCheck, { status: 401 });
     }
 
-    const { id } = params;
-    
+    const { id } = await params;
+
     // Create cache key
     const cacheKey = CacheKeys.packageItems.byId(id);
 
@@ -35,16 +35,19 @@ export async function GET(
     const packageItem = await PackageItemService.getPackageItemById(id);
 
     if (!packageItem) {
-      return NextResponse.json({
-        success: false,
-        error: 'Package item not found',
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Package item not found',
+        },
+        { status: 404 }
+      );
     }
 
     // Cache the result for 10 minutes
-    await CacheService.set(cacheKey, packageItem, { 
+    await CacheService.set(cacheKey, packageItem, {
       ttl: 600,
-      tags: [CacheTags.packageItems]
+      tags: [CacheTags.packageItems],
     });
 
     return NextResponse.json({
@@ -63,7 +66,7 @@ export async function GET(
 // PUT /api/admin/package-items/[id] - Update package item with cache invalidation
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authCheck = await checkAdminAuth(req);
@@ -72,27 +75,34 @@ export async function PUT(
     }
 
     const body = await req.json();
-    
+    const { id } = await params;
+
     // Validate request body
     const validationResult = packageItemUpdateSchema.safeParse({
       ...body,
-      id: params.id,
+      id,
     });
-    
+
     if (!validationResult.success) {
-      return NextResponse.json({
-        success: false,
-        error: 'Validation failed',
-        details: validationResult.error.errors,
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation failed',
+          details: validationResult.error.errors,
+        },
+        { status: 400 }
+      );
     }
 
-    const packageItem = await PackageItemService.updatePackageItem(params.id, validationResult.data);
+    const packageItem = await PackageItemService.updatePackageItem(
+      id,
+      validationResult.data
+    );
 
     // Invalidate package items cache
     await CacheService.invalidateByTags([CacheTags.packageItems]);
     // Also invalidate specific item cache
-    await CacheService.delete(CacheKeys.packageItems.byId(params.id));
+    await CacheService.delete(CacheKeys.packageItems.byId(id));
 
     return NextResponse.json({
       success: true,
@@ -111,7 +121,7 @@ export async function PUT(
 // DELETE /api/admin/package-items/[id] - Delete package item with cache invalidation
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authCheck = await checkAdminAuth(req);
@@ -119,12 +129,13 @@ export async function DELETE(
       return NextResponse.json(authCheck, { status: 401 });
     }
 
-    await PackageItemService.deletePackageItem(params.id);
+    const { id } = await params;
+    await PackageItemService.deletePackageItem(id);
 
     // Invalidate package items cache
     await CacheService.invalidateByTags([CacheTags.packageItems]);
     // Also invalidate specific item cache
-    await CacheService.delete(CacheKeys.packageItems.byId(params.id));
+    await CacheService.delete(CacheKeys.packageItems.byId(id));
 
     return NextResponse.json({
       success: true,

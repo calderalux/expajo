@@ -1,12 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Modal } from '@/components/ui/Modal';
-import { BaseForm, FormFieldConfig, FormAction, createRequiredStringValidation, createNumberValidation } from '@/components/forms/BaseForm';
+import {
+  BaseForm,
+  FormFieldConfig,
+  FormAction,
+  createRequiredStringValidation,
+  createNumberValidation,
+} from '@/components/forms/BaseForm';
 import { PackageRelationshipsManager } from '@/components/forms/PackageRelationshipsManager';
-import { 
-  packageCreateSchema, 
-  packageUpdateSchema
+import {
+  packageCreateSchema,
+  packageUpdateSchema,
 } from '@/lib/validations/packages';
 import { PackageCategory } from '@/lib/supabase';
 import { Database } from '@/types/database';
@@ -29,25 +35,26 @@ export function PackageFormModal({
   onClose,
   onSuccess,
   packageData,
-  mode
+  mode,
 }: PackageFormModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0); // Key to force form reset
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [destinationsLoading, setDestinationsLoading] = useState(false);
-  const [showRelationshipsManager, setShowRelationshipsManager] = useState(false);
+  const [showRelationshipsManager, setShowRelationshipsManager] =
+    useState(false);
 
   // Fetch destinations when modal opens
-  const fetchDestinations = async () => {
+  const fetchDestinations = useCallback(async () => {
     if (destinations.length > 0) return; // Already fetched
-    
+
     setDestinationsLoading(true);
     try {
       const sessionToken = localStorage.getItem('admin_session_token');
       const response = await fetch('/api/admin/destinations?limit=1000', {
         headers: {
-          'Authorization': `Bearer ${sessionToken}`,
+          Authorization: `Bearer ${sessionToken}`,
           'Content-Type': 'application/json',
         },
       });
@@ -63,16 +70,16 @@ export function PackageFormModal({
     } finally {
       setDestinationsLoading(false);
     }
-  };
+  }, [destinations.length]);
 
   // Reset form when modal opens/closes or mode changes
   useEffect(() => {
     if (isOpen) {
-      setFormKey(prev => prev + 1); // Force form reset
+      setFormKey((prev) => prev + 1); // Force form reset
       setError(null); // Clear any previous errors
       fetchDestinations(); // Fetch destinations when modal opens
     }
-  }, [isOpen, mode, packageData?.id]);
+  }, [isOpen, mode, packageData?.id, fetchDestinations]);
 
   // Form field configuration
   const fields: FormFieldConfig[] = [
@@ -90,17 +97,19 @@ export function PackageFormModal({
       name: 'destination_id',
       label: 'Destination',
       type: 'select',
-      placeholder: destinationsLoading ? 'Loading destinations...' : 'Select destination',
+      placeholder: destinationsLoading
+        ? 'Loading destinations...'
+        : 'Select destination',
       description: 'The destination for this package',
       required: true,
       gridSpan: 6,
       validation: createRequiredStringValidation('Destination is required'),
       options: [
         { value: '', label: 'Select destination...' },
-        ...destinations.map(dest => ({
+        ...destinations.map((dest) => ({
           value: dest.id,
-          label: `${dest.name}${dest.country ? ` (${dest.country})` : ''}`
-        }))
+          label: `${dest.name}${dest.country ? ` (${dest.country})` : ''}`,
+        })),
       ],
     },
     {
@@ -144,7 +153,10 @@ export function PackageFormModal({
       description: 'Starting price for the package',
       required: true,
       gridSpan: 4,
-      validation: createNumberValidation(0, 'Base price must be greater than 0'),
+      validation: createNumberValidation(
+        0,
+        'Base price must be greater than 0'
+      ),
     },
     {
       name: 'currency',
@@ -154,9 +166,7 @@ export function PackageFormModal({
       description: 'Package currency',
       required: true,
       gridSpan: 4,
-      options: [
-        { value: 'USD', label: 'USD (US Dollar)' },
-      ],
+      options: [{ value: 'USD', label: 'USD (US Dollar)' }],
       validation: createRequiredStringValidation('Currency is required'),
     },
     {
@@ -224,12 +234,16 @@ export function PackageFormModal({
       variant: 'outline',
       onClick: handleClose,
     },
-    ...(mode === 'edit' && packageData?.id ? [{
-      label: 'Manage Relationships',
-      type: 'button' as const,
-      variant: 'outline' as const,
-      onClick: () => setShowRelationshipsManager(true),
-    }] : []),
+    ...(mode === 'edit' && packageData?.id
+      ? [
+          {
+            label: 'Manage Relationships',
+            type: 'button' as const,
+            variant: 'outline' as const,
+            onClick: () => setShowRelationshipsManager(true),
+          },
+        ]
+      : []),
     {
       label: mode === 'create' ? 'Create Package' : 'Update Package',
       type: 'submit',
@@ -296,31 +310,35 @@ export function PackageFormModal({
       };
 
       // Validate the form data
-      const schema = mode === 'create' ? packageCreateSchema : packageUpdateSchema;
+      const schema =
+        mode === 'create' ? packageCreateSchema : packageUpdateSchema;
       const validationResult = schema.safeParse(formData);
-      
+
       if (!validationResult.success) {
-        const errors = validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+        const errors = validationResult.error.errors
+          .map((err) => `${err.path.join('.')}: ${err.message}`)
+          .join(', ');
         throw new Error(`Validation failed: ${errors}`);
       }
 
       const sessionToken = localStorage.getItem('admin_session_token');
-      const url = mode === 'create' 
-        ? '/api/admin/packages'
-        : `/api/admin/packages/${packageData?.id}`;
+      const url =
+        mode === 'create'
+          ? '/api/admin/packages'
+          : `/api/admin/packages/${packageData?.id}`;
       const method = mode === 'create' ? 'POST' : 'PUT';
 
       const response = await fetch(url, {
         method,
         headers: {
-          'Authorization': `Bearer ${sessionToken}`,
+          Authorization: `Bearer ${sessionToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(validationResult.data),
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         onSuccess(data.data);
         handleClose();
