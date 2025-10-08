@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Layout } from '@/components/layout/Layout';
 import { ExperienceCard } from '@/components/ui/ExperienceCard';
@@ -13,12 +13,9 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { CategoryFilter } from '@/components/ui/CategoryFilter';
 import { Search, Filter, MapPin, Star, Clock, Users } from 'lucide-react';
-import {
-  ExperienceService,
-  Experience,
-  ExperienceFilters,
-} from '@/lib/services/experiences';
+import { Experience, ExperienceFilters } from '@/lib/services/experiences';
 import { motion } from 'framer-motion';
+import { serviceTypeToLabel } from '@/types/database';
 
 interface ExperienceListState {
   experiences: Experience[];
@@ -31,13 +28,7 @@ interface ExperienceListState {
 
 const categories = [
   'All experiences',
-  'Nightlife',
-  'Culture',
-  'Beach resort',
-  'Culinary',
-  'Art & Fashion',
-  'Adventure',
-  'Wellness',
+  ...Object.values(serviceTypeToLabel),
 ];
 
 const sortOptions = [
@@ -95,234 +86,42 @@ function ExperienceListContent() {
     };
   };
 
-  // Mock data for fallback
-  const mockExperiences = [
-    {
-      id: '1',
-      title: 'Lagos VIP Nightlife Experience',
-      description:
-        "Exclusive access to Lagos' most prestigious clubs and lounges with personal security and luxury transportation.",
-      location: 'Victoria Island, Lagos',
-      price_per_person: 1200,
-      rating: 4.9,
-      reviews_count: 192,
-      image_urls: [
-        'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=500&h=400&fit=crop',
-      ],
-      features: ['VIP Access', 'Security included', 'Luxury transportation'],
-      duration_hours: 8,
-      max_capacity: 8,
-      category: 'Nightlife',
-      is_featured: true,
-      is_active: true,
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '2',
-      title: 'Abuja Cultural Heritage Journey',
-      description:
-        "Private guided exploration of Nigeria's capital with visits to cultural centers, art galleries, and traditional villages.",
-      location: 'Federal Capital Territory',
-      price_per_person: 1200,
-      rating: 4.8,
-      reviews_count: 156,
-      image_urls: [
-        'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=500&h=400&fit=crop',
-      ],
-      features: ['VIP Access', 'Security included', 'Private guide'],
-      duration_hours: 8,
-      max_capacity: 8,
-      category: 'Culture',
-      is_featured: true,
-      is_active: true,
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '3',
-      title: 'Calabar Beach Resort Luxury Escape',
-      description:
-        'Exclusive beachfront accommodations with private chef services, water sports, and spa treatments.',
-      location: 'Calabar, Cross River State',
-      price_per_person: 1200,
-      rating: 4.9,
-      reviews_count: 203,
-      image_urls: [
-        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&h=400&fit=crop',
-      ],
-      features: ['VIP Access', 'Security included', 'Private chef'],
-      duration_hours: 8,
-      max_capacity: 8,
-      category: 'Beach resort',
-      is_featured: true,
-      is_active: true,
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '4',
-      title: 'Private Chef Culinary Journey',
-      description:
-        'Authentic Nigerian cuisine prepared by renowned chefs with cooking classes and wine pairings.',
-      location: 'Lagos & Abuja',
-      price_per_person: 1200,
-      rating: 4.7,
-      reviews_count: 134,
-      image_urls: [
-        'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=500&h=400&fit=crop',
-      ],
-      features: ['VIP Access', 'Security included', 'Cooking classes'],
-      duration_hours: 8,
-      max_capacity: 8,
-      category: 'Culinary',
-      is_featured: true,
-      is_active: true,
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '5',
-      title: 'Luxury Safari Adventure',
-      description:
-        "Exclusive wildlife experience in Nigeria's premier game reserves with luxury camping and expert guides.",
-      location: 'Yankari Game Reserve',
-      price_per_person: 1200,
-      rating: 4.8,
-      reviews_count: 178,
-      image_urls: [
-        'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=500&h=400&fit=crop',
-      ],
-      features: ['VIP Access', 'Security included', 'Expert guides'],
-      duration_hours: 8,
-      max_capacity: 8,
-      category: 'Adventure',
-      is_featured: true,
-      is_active: true,
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '6',
-      title: 'Exclusive Art & Fashion Tour',
-      description:
-        "Behind-the-scenes access to Nigeria's thriving art and fashion scene with private studio visits.",
-      location: 'Lagos',
-      price_per_person: 1200,
-      rating: 4.6,
-      reviews_count: 145,
-      image_urls: [
-        'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=500&h=400&fit=crop',
-      ],
-      features: ['VIP Access', 'Security included', 'Studio visits'],
-      duration_hours: 8,
-      max_capacity: 8,
-      category: 'Art & Fashion',
-      is_featured: true,
-      is_active: true,
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '7',
-      title: 'Luxury Wellness Retreat',
-      description:
-        'Premium spa and wellness experience with personalized treatments, meditation sessions, and healthy cuisine.',
-      location: 'Abuja',
-      price_per_person: 1500,
-      rating: 4.8,
-      reviews_count: 98,
-      image_urls: [
-        'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=500&h=400&fit=crop',
-      ],
-      features: ['VIP Access', 'Security included', 'Personalized treatments'],
-      duration_hours: 12,
-      max_capacity: 6,
-      category: 'Wellness',
-      is_featured: true,
-      is_active: true,
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-    },
-  ];
 
   // Fetch experiences
-  const fetchExperiences = async (page: number = 1, reset: boolean = false) => {
+  const fetchExperiences = useCallback(async (page: number = 1, reset: boolean = false) => {
     try {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
+      
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (searchTerm) {
+        params.append('search', searchTerm);
+      }
+      if (filters.category) {
+        params.append('category', filters.category);
+      }
+      if (filters.isFeatured !== undefined) {
+        params.append('featured', filters.isFeatured.toString());
+      }
+      params.append('limit', '12');
+      params.append('offset', ((page - 1) * 12).toString());
 
-      // Check if Supabase is configured
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const response = await fetch(`/api/experiences/public?${params.toString()}`);
+      const result = await response.json();
 
-      if (!supabaseUrl || !supabaseKey) {
-        // Use mock data if Supabase is not configured
-        console.log('Supabase not configured, using mock data');
-        const filteredData = mockExperiences.filter((exp) => {
-          if (filters.category && exp.category !== filters.category)
-            return false;
-          if (
-            filters.location &&
-            !exp.location.toLowerCase().includes(filters.location.toLowerCase())
-          )
-            return false;
-          if (filters.minPrice && exp.price_per_person < filters.minPrice)
-            return false;
-          if (filters.maxPrice && exp.price_per_person > filters.maxPrice)
-            return false;
-          if (filters.minRating && exp.rating < filters.minRating) return false;
-          return true;
-        });
-
-        // Apply sorting
-        const sortedData = [...filteredData].sort((a, b) => {
-          const { field, order } = getSortOptions(sortBy);
-          let aVal = a[field as keyof typeof a];
-          let bVal = b[field as keyof typeof b];
-
-          if (typeof aVal === 'string') aVal = aVal.toLowerCase();
-          if (typeof bVal === 'string') bVal = bVal.toLowerCase();
-
-          if (order === 'asc') {
-            return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-          } else {
-            return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
-          }
-        });
-
-        setState((prev) => ({
-          ...prev,
-          experiences: reset
-            ? sortedData
-            : [...prev.experiences, ...sortedData],
-          isLoading: false,
-          hasMore: false, // Mock data is limited
-          currentPage: page,
-          totalCount: sortedData.length,
-        }));
-        return;
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch experiences');
       }
 
-      const sortOptions = getSortOptions(sortBy);
-      const { data, error } = await ExperienceService.getExperiences(
-        filters,
-        sortOptions,
-        12 // Limit per page
-      );
-
-      if (error) {
-        throw new Error(error);
-      }
+      const data = result.data || [];
 
       setState((prev) => ({
         ...prev,
-        experiences: reset
-          ? data || []
-          : [...prev.experiences, ...(data || [])],
+        experiences: reset ? data : [...prev.experiences, ...data],
         isLoading: false,
-        hasMore: (data || []).length === 12,
+        hasMore: result.pagination?.hasMore || false,
         currentPage: page,
-        totalCount: data?.length || 0,
+        totalCount: result.pagination?.total || 0,
       }));
     } catch (err: any) {
       console.error('Error fetching experiences:', err);
@@ -332,7 +131,7 @@ function ExperienceListContent() {
         error: err.message || 'Failed to fetch experiences',
       }));
     }
-  };
+  }, [filters, searchTerm, sortBy]);
 
   // Load more experiences
   const loadMore = () => {
@@ -374,7 +173,7 @@ function ExperienceListContent() {
   // Initial load
   useEffect(() => {
     fetchExperiences(1, true);
-  }, []);
+  }, [fetchExperiences]);
 
   // Update URL when filters change
   useEffect(() => {

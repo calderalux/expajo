@@ -6,12 +6,12 @@ const mockFAQs: FAQItemData[] = [
   {
     id: '1',
     question: 'How does WhatsApp planning Work?',
-    answer: 'Our WhatsApp planning service allows you to communicate directly with our travel experts in real-time. Simply send us a message with your travel preferences, dates, and interests, and we\'ll create a personalized itinerary for your Nigerian adventure. You can ask questions, make changes, and get instant responses throughout your planning process.',
+    answer: 'Our WhatsApp planning service allows you to communicate directly with our travel experts in real-time. Simply send us a message with your travel preferences, dates, and interests, and we&apos;ll create a personalized itinerary for your Nigerian adventure. You can ask questions, make changes, and get instant responses throughout your planning process.',
   },
   {
     id: '2',
     question: 'Can I pay in my home currency?',
-    answer: 'Yes! We accept payments in multiple currencies including USD, EUR, GBP, and NGN. Our secure payment system automatically converts your payment to the local currency at competitive exchange rates. You\'ll see the exact amount in your preferred currency before confirming your booking.',
+    answer: 'Yes! We accept payments in multiple currencies including USD, EUR, GBP, and NGN. Our secure payment system automatically converts your payment to the local currency at competitive exchange rates. You&apos;ll see the exact amount in your preferred currency before confirming your booking.',
   },
   {
     id: '3',
@@ -26,7 +26,7 @@ const mockFAQs: FAQItemData[] = [
   {
     id: '5',
     question: 'Are chefs available for special diets?',
-    answer: 'Yes, our private chefs are experienced in accommodating various dietary requirements including vegetarian, vegan, halal, kosher, gluten-free, and other special diets. Please inform us of your dietary needs during booking, and we\'ll ensure your meals are prepared according to your preferences.',
+    answer: 'Yes, our private chefs are experienced in accommodating various dietary requirements including vegetarian, vegan, halal, kosher, gluten-free, and other special diets. Please inform us of your dietary needs during booking, and we&apos;ll ensure your meals are prepared according to your preferences.',
   },
   {
     id: '6',

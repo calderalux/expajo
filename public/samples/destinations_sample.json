@@ -1,0 +1,78 @@
+[
+  {
+    "name": "Lagos",
+    "description": "The commercial capital of Nigeria, known for its vibrant nightlife and business opportunities.",
+    "country": "Nigeria",
+    "country_code": "NG",
+    "region": "Lagos State",
+    "image_cover_url": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800",
+    "best_time_to_visit": "November to March",
+    "climate": "Tropical",
+    "language": "English, Yoruba",
+    "currency": "NGN",
+    "featured": true,
+    "is_published": true,
+    "highlights": ["Victoria Island", "Lekki Conservation Centre", "National Museum"],
+    "image_gallery": [
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800",
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
+    ]
+  },
+  {
+    "name": "Abuja",
+    "description": "The capital city of Nigeria, known for its modern architecture and political significance.",
+    "country": "Nigeria",
+    "country_code": "NG",
+    "region": "Federal Capital Territory",
+    "image_cover_url": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800",
+    "best_time_to_visit": "October to April",
+    "climate": "Tropical",
+    "language": "English, Hausa",
+    "currency": "NGN",
+    "featured": true,
+    "is_published": true,
+    "highlights": ["Aso Rock", "National Mosque", "Millennium Park"],
+    "image_gallery": [
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800",
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
+    ]
+  },
+  {
+    "name": "Calabar",
+    "description": "A historic city in southern Nigeria, known for its colonial architecture and cultural heritage.",
+    "country": "Nigeria",
+    "country_code": "NG",
+    "region": "Cross River State",
+    "image_cover_url": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800",
+    "best_time_to_visit": "December to March",
+    "climate": "Tropical",
+    "language": "English, Efik",
+    "currency": "NGN",
+    "featured": false,
+    "is_published": true,
+    "highlights": ["Calabar Museum", "Tinapa Resort", "Obudu Cattle Ranch"],
+    "image_gallery": [
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800",
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
+    ]
+  },
+  {
+    "name": "Kano",
+    "description": "One of Nigeria's oldest cities, known for its rich history and traditional crafts.",
+    "country": "Nigeria",
+    "country_code": "NG",
+    "region": "Kano State",
+    "image_cover_url": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800",
+    "best_time_to_visit": "November to February",
+    "climate": "Semi-arid",
+    "language": "English, Hausa",
+    "currency": "NGN",
+    "featured": false,
+    "is_published": true,
+    "highlights": ["Kano City Walls", "Gidan Makama Museum", "Kurmi Market"],
+    "image_gallery": [
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800",
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800"
+    ]
+  }
+]

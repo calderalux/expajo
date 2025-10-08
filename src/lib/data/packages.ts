@@ -5,7 +5,7 @@ export const featuredPackages: Package[] = [
     id: '1',
     title: 'Lagos VIP Nightlife Experience',
     location: 'Lagos, Nigeria',
-    description: 'Exclusive access to Lagos\' most prestigious clubs and lounges with personal security and luxury.',
+    description: 'Exclusive access to Lagos&apos;s most prestigious clubs and lounges with personal security and luxury.',
     imageUrl: 'https://images.unsplash.com/photo-1514525253164-ff462475708b?w=500&h=300&fit=crop',
     originalPrice: 1500,
     currentPrice: 1200,

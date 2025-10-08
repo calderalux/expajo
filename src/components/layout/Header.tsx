@@ -40,11 +40,12 @@ export const Header: React.FC = () => {
           <Link href="/" className="flex items-center space-x-2">
             <div className="relative w-20 h-20">
               <Image
-                src="/images/logo-sample1.png"
+                src="/images/expajo-logo.png"
                 alt="Expajo Logo"
-                fill
                 className="object-contain"
                 priority
+                width={200}
+                height={200}
               />
             </div>
           </Link>

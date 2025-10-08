@@ -9,7 +9,15 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "redis:start": "docker run -d --name redis-cache -p 6379:6379 redis:alpine",
+    "redis:stop": "docker stop redis-cache && docker rm redis-cache",
+    "redis:cli": "redis-cli",
+    "cache:test": "curl http://localhost:3000/api/cache/test",
+    "cache:stats": "curl http://localhost:3000/api/cache/stats",
+    "cache:health": "curl http://localhost:3000/api/cache/health",
+    "email:test": "curl \"http://localhost:3000/api/admin/email/test?email=test@example.com\"",
+    "email:otp": "curl -X POST \"http://localhost:3000/api/admin/email/test\" -H \"Content-Type: application/json\" -d '{\"email\": \"test@example.com\", \"code\": \"123456\"}'"
   },
   "dependencies": {
     "@heroui/react": "^2.8.4",
@@ -22,16 +30,23 @@
     "@mantine/notifications": "^8.3.2",
     "@supabase/ssr": "^0.1.0",
     "@supabase/supabase-js": "^2.39.0",
+    "@tabler/icons-react": "^3.35.0",
+    "@tailwindcss/postcss": "^4.1.14",
     "@tanstack/react-form": "^1.23.4",
     "@tanstack/zod-form-adapter": "^0.42.1",
-    "clsx": "^2.0.0",
+    "@types/ioredis": "^4.28.10",
+    "@types/nodemailer": "^7.0.2",
+    "clsx": "^2.1.1",
     "dayjs": "^1.11.10",
     "framer-motion": "^11.5.6",
+    "ioredis": "^5.8.0",
     "lucide-react": "^0.303.0",
     "next": "^15.0.0",
+    "nodemailer": "^7.0.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "tailwind-merge": "^2.2.0",
+    "tailwind-merge": "^2.6.0",
+    "xlsx": "^0.18.5",
     "zod": "^3.22.4"
   },
   "devDependencies": {
@@ -44,14 +59,14 @@
     "@types/react-dom": "^18.2.18",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
-    "autoprefixer": "^10.4.16",
+    "autoprefixer": "^10.4.21",
     "eslint": "^8.56.0",
     "eslint-config-next": "^15.0.0",
     "jest": "^30.1.3",
     "jest-environment-jsdom": "^30.1.2",
-    "postcss": "^8.4.32",
+    "postcss": "^8.5.6",
     "prettier": "^3.1.1",
-    "tailwindcss": "^3.4.0",
-    "typescript": "^5.3.3"
+    "tailwindcss": "^3.4.18",
+    "typescript": "5.9.3"
   }
 }

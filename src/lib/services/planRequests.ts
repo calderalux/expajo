@@ -1,5 +1,5 @@
 import { supabase } from '../supabase';
-import { Database } from '../supabase';
+import { Database } from '@/types/database';
 
 type PlanRequest = Database['public']['Tables']['plan_requests']['Row'];
 type PlanRequestInsert = Database['public']['Tables']['plan_requests']['Insert'];
@@ -35,7 +35,7 @@ export class PlanRequestService {
         status: 'pending',
       };
 
-      const { data: result, error } = await supabase
+      const { data: result, error } = await (supabase as any)
         .from('plan_requests')
         .insert(insertData)
         .select()
@@ -93,7 +93,7 @@ export class PlanRequestService {
     status: string
   ): Promise<{ data: PlanRequest | null; error: any }> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('plan_requests')
         .update({ status })
         .eq('id', id)
@@ -168,8 +168,8 @@ export class PlanRequestService {
 
       if (error) return { data: { total: 0, pending: 0, in_progress: 0, completed: 0, cancelled: 0 }, error };
 
-      const stats = data.reduce(
-        (acc, request) => {
+      const stats = (data as any).reduce(
+        (acc: any, request: any) => {
           acc.total++;
           acc[request.status as keyof typeof acc]++;
           return acc;

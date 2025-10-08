@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Playfair_Display, Lato } from 'next/font/google';
-import { SupabaseProvider } from '@/lib/providers';
-import { MantineProviderWrapper } from '@/lib/mantine-provider';
+import { ClientProviders } from '@/components/providers/ClientProviders';
 import '@/styles/globals.css';
 
 const playfair = Playfair_Display({
@@ -54,20 +53,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${playfair.variable} ${lato.variable}`}
-      suppressHydrationWarning
-    >
-      <body
-        className="min-h-screen bg-background font-lato antialiased"
-        suppressHydrationWarning
-      >
-        <MantineProviderWrapper>
-          <SupabaseProvider>
-            <div suppressHydrationWarning>{children}</div>
-          </SupabaseProvider>
-        </MantineProviderWrapper>
+    <html lang="en" className={`${playfair.variable} ${lato.variable}`} suppressHydrationWarning>
+      <body className="min-h-screen bg-background font-lato antialiased" suppressHydrationWarning>
+        <ClientProviders>
+          {children}
+        </ClientProviders>
       </body>
     </html>
   );

@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Test Destination 1",
+    "description": "This is a test destination for import testing",
+    "country": "Nigeria",
+    "country_code": "NG",
+    "region": "Test Region",
+    "image_cover_url": "https://example.com/test1.jpg",
+    "image_gallery": ["https://example.com/test1-1.jpg", "https://example.com/test1-2.jpg"],
+    "highlights": ["Test Highlight 1", "Test Highlight 2"],
+    "best_time_to_visit": "All year round",
+    "climate": "Tropical",
+    "language": "English",
+    "currency": "NGN",
+    "featured": false,
+    "is_published": true
+  },
+  {
+    "name": "Test Destination 2",
+    "description": "Another test destination for import testing",
+    "country": "Nigeria",
+    "country_code": "NG",
+    "region": "Test Region 2",
+    "image_cover_url": "https://example.com/test2.jpg",
+    "image_gallery": ["https://example.com/test2-1.jpg"],
+    "highlights": ["Test Highlight 3"],
+    "best_time_to_visit": "Dry season",
+    "climate": "Semi-arid",
+    "language": "English, Hausa",
+    "currency": "NGN",
+    "featured": true,
+    "is_published": true
+  }
+]

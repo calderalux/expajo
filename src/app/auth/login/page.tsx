@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SimpleLoginForm } from '@/components/forms/SimpleLoginForm';
 import { useSupabase } from '@/lib/providers';
 import { useRouter } from 'next/navigation';
@@ -13,10 +13,20 @@ interface LoginFormData {
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = useSupabase();
+  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+  const supabase = useSupabase();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleSubmit = async (data: LoginFormData) => {
+    if (!isClient) {
+      setError('Please wait for the page to load completely.');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 

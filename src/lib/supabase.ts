@@ -1,416 +1,88 @@
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Client-side Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Client-side Supabase client with proper typing
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
-// Server-side Supabase client
+// Singleton service client for better performance
+let serverClientInstance: ReturnType<typeof createClient<Database>> | null = null;
+
+// Server-side Supabase client (bypasses RLS) - Singleton pattern
 export const createServerClient = () => {
-  return createClient(supabaseUrl, supabaseAnonKey);
+  if (serverClientInstance) {
+    return serverClientInstance;
+  }
+
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!serviceKey) {
+    console.error('SUPABASE_SERVICE_ROLE_KEY is not set in environment variables');
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for server-side operations');
+  }
+  
+  serverClientInstance = createClient<Database>(supabaseUrl, serviceKey);
+  return serverClientInstance;
 };
 
-// Database types
-export interface Database {
-  public: {
-    Tables: {
-      users: {
-        Row: {
-          id: string;
-          email: string;
-          full_name: string | null;
-          avatar_url: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id: string;
-          email: string;
-          full_name?: string | null;
-          avatar_url?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          email?: string;
-          full_name?: string | null;
-          avatar_url?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      listings: {
-        Row: {
-          id: string;
-          title: string;
-          description: string;
-          price_per_month: number;
-          location: string;
-          images: string[];
-          amenities: string[];
-          host_id: string;
-          is_available: boolean;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          title: string;
-          description: string;
-          price_per_month: number;
-          location: string;
-          images: string[];
-          amenities: string[];
-          host_id: string;
-          is_available?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          title?: string;
-          description?: string;
-          price_per_month?: number;
-          location?: string;
-          images?: string[];
-          amenities?: string[];
-          host_id?: string;
-          is_available?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      bookings: {
-        Row: {
-          id: string;
-          user_id: string;
-          listing_id: string;
-          start_date: string;
-          end_date: string;
-          total_price: number;
-          status: 'pending' | 'confirmed' | 'cancelled';
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          listing_id: string;
-          start_date: string;
-          end_date: string;
-          total_price: number;
-          status?: 'pending' | 'confirmed' | 'cancelled';
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          listing_id?: string;
-          start_date?: string;
-          end_date?: string;
-          total_price?: number;
-          status?: 'pending' | 'confirmed' | 'cancelled';
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      experiences: {
-        Row: {
-          id: string;
-          title: string;
-          description: string;
-          location: string;
-          price_per_person: number;
-          rating: number;
-          reviews_count: number;
-          image_urls: string[];
-          features: string[];
-          duration_hours: number;
-          max_capacity: number;
-          category: string;
-          is_featured: boolean;
-          is_active: boolean;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          title: string;
-          description: string;
-          location: string;
-          price_per_person: number;
-          rating?: number;
-          reviews_count?: number;
-          image_urls?: string[];
-          features?: string[];
-          duration_hours: number;
-          max_capacity: number;
-          category: string;
-          is_featured?: boolean;
-          is_active?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          title?: string;
-          description?: string;
-          location?: string;
-          price_per_person?: number;
-          rating?: number;
-          reviews_count?: number;
-          image_urls?: string[];
-          features?: string[];
-          duration_hours?: number;
-          max_capacity?: number;
-          category?: string;
-          is_featured?: boolean;
-          is_active?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-              plan_requests: {
-                Row: {
-                  id: string;
-                  location: string;
-                  travel_date: string;
-                  guests: number;
-                  special_requests: string | null;
-                  budget_range: string | null;
-                  interests: string[] | null;
-                  contact_email: string | null;
-                  contact_phone: string | null;
-                  status: string;
-                  created_at: string;
-                  updated_at: string;
-                };
-                Insert: {
-                  id?: string;
-                  location: string;
-                  travel_date: string;
-                  guests: number;
-                  special_requests?: string | null;
-                  budget_range?: string | null;
-                  interests?: string[] | null;
-                  contact_email?: string | null;
-                  contact_phone?: string | null;
-                  status?: string;
-                  created_at?: string;
-                  updated_at?: string;
-                };
-                Update: {
-                  id?: string;
-                  location?: string;
-                  travel_date?: string;
-                  guests?: number;
-                  special_requests?: string | null;
-                  budget_range?: string | null;
-                  interests?: string[] | null;
-                  contact_email?: string | null;
-                  contact_phone?: string | null;
-                  status?: string;
-                  created_at?: string;
-                  updated_at?: string;
-                };
-              };
-              packages: {
-                Row: {
-                  id: string;
-                  destination_id: string;
-                  title: string;
-                  slug: string | null;
-                  summary: string | null;
-                  description: string | null;
-                  category: 'adventure' | 'cultural' | 'luxury' | 'beach' | 'city' | 'nature' | null;
-                  lead_partner_id: string | null;
-                  duration_days: number | null;
-                  group_size_limit: number | null;
-                  inclusions: any[] | null;
-                  exclusions: any[] | null;
-                  itinerary: any[] | null;
-                  base_price: number;
-                  currency: 'USD' | 'NGN' | 'EUR' | 'GBP';
-                  discount_percent: number | null;
-                  featured: boolean | null;
-                  luxury_certified: boolean | null;
-                  avg_rating: number | null;
-                  review_count: number | null;
-                  availability: any | null;
-                  is_published: boolean | null;
-                  created_at: string | null;
-                  updated_at: string | null;
-                };
-                Insert: {
-                  id?: string;
-                  destination_id: string;
-                  title: string;
-                  slug?: string | null;
-                  summary?: string | null;
-                  description?: string | null;
-                  category?: 'adventure' | 'cultural' | 'luxury' | 'beach' | 'city' | 'nature' | null;
-                  lead_partner_id?: string | null;
-                  duration_days?: number | null;
-                  group_size_limit?: number | null;
-                  inclusions?: any[] | null;
-                  exclusions?: any[] | null;
-                  itinerary?: any[] | null;
-                  base_price: number;
-                  currency?: 'USD' | 'NGN' | 'EUR' | 'GBP';
-                  discount_percent?: number | null;
-                  featured?: boolean | null;
-                  luxury_certified?: boolean | null;
-                  avg_rating?: number | null;
-                  review_count?: number | null;
-                  availability?: any | null;
-                  is_published?: boolean | null;
-                  created_at?: string | null;
-                  updated_at?: string | null;
-                };
-                Update: {
-                  id?: string;
-                  destination_id?: string;
-                  title?: string;
-                  slug?: string | null;
-                  summary?: string | null;
-                  description?: string | null;
-                  category?: 'adventure' | 'cultural' | 'luxury' | 'beach' | 'city' | 'nature' | null;
-                  lead_partner_id?: string | null;
-                  duration_days?: number | null;
-                  group_size_limit?: number | null;
-                  inclusions?: any[] | null;
-                  exclusions?: any[] | null;
-                  itinerary?: any[] | null;
-                  base_price?: number;
-                  currency?: 'USD' | 'NGN' | 'EUR' | 'GBP';
-                  discount_percent?: number | null;
-                  featured?: boolean | null;
-                  luxury_certified?: boolean | null;
-                  avg_rating?: number | null;
-                  review_count?: number | null;
-                  availability?: any | null;
-                  is_published?: boolean | null;
-                  created_at?: string | null;
-                  updated_at?: string | null;
-                };
-              };
-              reviews: {
-                Row: {
-                  id: string;
-                  booking_id: string;
-                  user_id: string;
-                  package_id: string;
-                  rating: number;
-                  comment: string | null;
-                  created_at: string | null;
-                };
-                Insert: {
-                  id?: string;
-                  booking_id: string;
-                  user_id: string;
-                  package_id: string;
-                  rating: number;
-                  comment?: string | null;
-                  created_at?: string | null;
-                };
-                Update: {
-                  id?: string;
-                  booking_id?: string;
-                  user_id?: string;
-                  package_id?: string;
-                  rating?: number;
-                  comment?: string | null;
-                  created_at?: string | null;
-                };
-              };
-              destinations: {
-                Row: {
-                  id: string;
-                  title: string;
-                  description: string;
-                  location: string;
-                  country: string;
-                  image_urls: string[];
-                  highlights: string[];
-                  best_time_to_visit: string;
-                  climate: string;
-                  currency: string;
-                  language: string;
-                  is_featured: boolean;
-                  is_active: boolean;
-                  created_at: string;
-                  updated_at: string;
-                };
-                Insert: {
-                  id?: string;
-                  title: string;
-                  description: string;
-                  location: string;
-                  country: string;
-                  image_urls?: string[];
-                  highlights?: string[];
-                  best_time_to_visit: string;
-                  climate: string;
-                  currency: string;
-                  language: string;
-                  is_featured?: boolean;
-                  is_active?: boolean;
-                  created_at?: string;
-                  updated_at?: string;
-                };
-                Update: {
-                  id?: string;
-                  title?: string;
-                  description?: string;
-                  location?: string;
-                  country?: string;
-                  image_urls?: string[];
-                  highlights?: string[];
-                  best_time_to_visit?: string;
-                  climate?: string;
-                  currency?: string;
-                  language?: string;
-                  is_featured?: boolean;
-                  is_active?: boolean;
-                  created_at?: string;
-                  updated_at?: string;
-                };
-              };
-              faqs: {
-                Row: {
-                  id: string;
-                  question: string;
-                  answer: string;
-                  category: string;
-                  order_index: number;
-                  is_active: boolean;
-                  created_at: string;
-                  updated_at: string;
-                };
-                Insert: {
-                  id?: string;
-                  question: string;
-                  answer: string;
-                  category?: string;
-                  order_index?: number;
-                  is_active?: boolean;
-                  created_at?: string;
-                  updated_at?: string;
-                };
-                Update: {
-                  id?: string;
-                  question?: string;
-                  answer?: string;
-                  category?: string;
-                  order_index?: number;
-                  is_active?: boolean;
-                  created_at?: string;
-                  updated_at?: string;
-                };
-              };
-    };
-  };
+// Database enums
+export enum BookingStatus {
+  PENDING = 'pending',
+  CONFIRMED = 'confirmed',
+  CANCELLED = 'cancelled',
+  COMPLETED = 'completed'
 }
+
+export enum PaymentStatus {
+  PENDING = 'pending',
+  PAID = 'paid',
+  FAILED = 'failed',
+  REFUNDED = 'refunded'
+}
+
+export enum PartnerStatus {
+  PENDING = 'pending',
+  VERIFIED = 'verified',
+  SUSPENDED = 'suspended',
+}
+
+export enum MembershipTier {
+  BASIC = 'basic',
+  BLACK = 'black',
+}
+
+export enum CurrencyEnum {
+  USD = 'USD',
+}
+
+export enum PackageCategory {
+  ADVENTURE = 'adventure',
+  CULTURAL = 'cultural',
+  LUXURY = 'luxury',
+  BEACH = 'beach',
+  CITY = 'city',
+  NATURE = 'nature'
+}
+
+export enum ItemType {
+  accommodation = 'accommodation',
+  airport_transfer = 'airport_transfer',
+  transportation = 'transportation',
+  security = 'security',
+  excursions = 'excursions',
+  night_life = 'night_life',
+  dining = 'dining',
+  culture = 'culture',
+  beach_resort = 'beach_resort',
+  culinary = 'culinary',
+  art_fashion = 'art_fashion',
+  adventure = 'adventure',
+  wellness = 'wellness',
+  live_events = 'live_events',
+  local_experiences = 'local_experiences',
+  festivals = 'festivals',
+  attractions = 'attractions',
+}
+
