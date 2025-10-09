@@ -68,6 +68,10 @@ export const PlanYourExperienceModal: React.FC<
   const [showSuccess, setShowSuccess] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState(countries[0]); // Default to Nigeria
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [destinations, setDestinations] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [destinationsLoading, setDestinationsLoading] = useState(true);
   const [formData, setFormData] = useState<{
     step1?: Step1Data;
     step2?: Step2Data;
@@ -78,6 +82,39 @@ export const PlanYourExperienceModal: React.FC<
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
+
+  // Fetch destinations on component mount
+  useEffect(() => {
+    const fetchDestinations = async () => {
+      try {
+        const response = await fetch('/api/destinations/public');
+        const result = await response.json();
+        if (result.success && result.data) {
+          const destinationOptions = result.data.map(
+            (dest: { name: string; country: string }) => ({
+              value: dest.name.toLowerCase().replace(/\s+/g, '-'),
+              label: `${dest.name}, ${dest.country}`,
+            })
+          );
+          setDestinations(destinationOptions);
+        }
+      } catch (error) {
+        console.error('Error fetching destinations:', error);
+        // Fallback to static data
+        setDestinations([
+          { value: 'abuja', label: 'Abuja, Nigeria' },
+          { value: 'lagos', label: 'Lagos, Nigeria' },
+          { value: 'calabar', label: 'Calabar, Nigeria' },
+          { value: 'kano', label: 'Kano, Nigeria' },
+          { value: 'ibadan', label: 'Ibadan, Nigeria' },
+        ]);
+      } finally {
+        setDestinationsLoading(false);
+      }
+    };
+
+    fetchDestinations();
+  }, []);
 
   // Reset form data when modal opens with new initial data
   useEffect(() => {
@@ -112,9 +149,7 @@ export const PlanYourExperienceModal: React.FC<
     defaultValues: {
       destination:
         formData.step2?.destination ||
-        (initialData?.location
-          ? capitalizeFirstLetter(initialData.location)
-          : ''),
+        (initialData?.location ? initialData.location : ''),
       arrivalDate:
         formData.step2?.arrivalDate || initialData?.travel_date || '',
       departureDate:
@@ -137,6 +172,30 @@ export const PlanYourExperienceModal: React.FC<
       setCurrentStep(3);
     },
   });
+
+  // Update destination field when destinations are loaded and there's an initial location
+  useEffect(() => {
+    if (
+      !destinationsLoading &&
+      destinations.length > 0 &&
+      initialData?.location &&
+      !formData.step2?.destination
+    ) {
+      // Check if the initial location matches any destination value
+      const matchingDestination = destinations.find(
+        (dest) => dest.value === initialData.location
+      );
+      if (matchingDestination) {
+        step2Form.setFieldValue('destination', matchingDestination.value);
+      }
+    }
+  }, [
+    destinationsLoading,
+    destinations,
+    initialData?.location,
+    formData.step2?.destination,
+    step2Form,
+  ]);
 
   // Step 3 Form
   const step3Form = useForm({
@@ -271,13 +330,20 @@ export const PlanYourExperienceModal: React.FC<
               : '';
 
             return (
-              <TextInput
+              <Select
                 label="Destination (State/City)"
-                placeholder="Lagos, Abuja, Port-Harcourt..."
+                placeholder={
+                  destinationsLoading
+                    ? 'Loading destinations...'
+                    : 'Select your destination'
+                }
+                data={destinations}
                 value={fieldApi.state.value || ''}
-                onChange={(e) => fieldApi.handleChange(e.target.value)}
+                onChange={(value) => fieldApi.handleChange(value || '')}
                 onBlur={fieldApi.handleBlur}
                 error={errorMessage}
+                searchable
+                clearable
                 styles={{
                   input: {
                     height: '3rem',
@@ -306,20 +372,32 @@ export const PlanYourExperienceModal: React.FC<
                   label="Arrival Date"
                   placeholder="Select"
                   value={
-                    fieldApi.state.value
-                      ? new Date(fieldApi.state.value + 'T00:00:00')
-                      : null
+                    fieldApi.state.value ? new Date(fieldApi.state.value) : null
                   }
-                  onChange={(date) =>
-                    fieldApi.handleChange(
-                      date && typeof date === 'object' && 'getFullYear' in date
-                        ? `${(date as Date).getFullYear()}-${String((date as Date).getMonth() + 1).padStart(2, '0')}-${String((date as Date).getDate()).padStart(2, '0')}`
-                        : ''
-                    )
-                  }
+                  onChange={(date) => {
+                    const newDate = date
+                      ? typeof date === 'string'
+                        ? date
+                        : (date as Date).toISOString().split('T')[0]
+                      : '';
+
+                    fieldApi.handleChange(newDate);
+
+                    // Clear departure date if it becomes invalid
+                    const departureDateValue =
+                      step2Form.getFieldValue('departureDate');
+                    if (departureDateValue && newDate) {
+                      const departureDate = new Date(departureDateValue);
+                      const arrivalDate = new Date(newDate);
+                      if (departureDate <= arrivalDate) {
+                        step2Form.setFieldValue('departureDate', '');
+                      }
+                    }
+                  }}
                   onBlur={fieldApi.handleBlur}
                   error={errorMessage}
                   minDate={dayjs().add(1, 'day').toDate()}
+                  maxDate={dayjs().add(1, 'year').toDate()}
                   styles={{
                     input: {
                       height: '3rem',
@@ -340,25 +418,37 @@ export const PlanYourExperienceModal: React.FC<
                     'Field is required'
                 : '';
 
+              // Get arrival date from form state to set minimum departure date
+              const arrivalDateValue = step2Form.getFieldValue('arrivalDate');
+              const arrivalDate = arrivalDateValue
+                ? new Date(arrivalDateValue)
+                : null;
+
+              // Set minimum departure date to be the day after arrival date
+              const minDepartureDate = arrivalDate
+                ? dayjs(arrivalDate).add(1, 'day').toDate()
+                : dayjs().add(1, 'day').toDate();
+
               return (
                 <DatePickerInput
                   label="Departure Date"
                   placeholder="Select"
                   value={
-                    fieldApi.state.value
-                      ? new Date(fieldApi.state.value + 'T00:00:00')
-                      : null
+                    fieldApi.state.value ? new Date(fieldApi.state.value) : null
                   }
                   onChange={(date) =>
                     fieldApi.handleChange(
-                      date && typeof date === 'object' && 'getFullYear' in date
-                        ? `${(date as Date).getFullYear()}-${String((date as Date).getMonth() + 1).padStart(2, '0')}-${String((date as Date).getDate()).padStart(2, '0')}`
+                      date
+                        ? typeof date === 'string'
+                          ? date
+                          : (date as Date).toISOString().split('T')[0]
                         : ''
                     )
                   }
                   onBlur={fieldApi.handleBlur}
                   error={errorMessage}
-                  minDate={dayjs().add(1, 'day').toDate()}
+                  minDate={minDepartureDate}
+                  maxDate={dayjs().add(1, 'year').toDate()}
                   styles={{
                     input: {
                       height: '3rem',
