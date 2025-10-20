@@ -16,7 +16,8 @@ import {
   LogOut,
   Menu,
   X,
-  List
+  List,
+  FolderOpen
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -104,6 +105,13 @@ function AdminNavigationContent({ children, currentPage }: AdminNavigationProps)
       href: '/admin/users',
       permission: true, // Always show for admin users
       active: pathname === '/admin/users',
+    },
+    {
+      name: 'Files',
+      icon: FolderOpen,
+      href: '/admin/files',
+      permission: true, // Always show for admin users
+      active: pathname === '/admin/files',
     },
     {
       name: 'Settings',

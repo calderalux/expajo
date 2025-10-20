@@ -1,6 +1,7 @@
 // Database types for Supabase
 
 // Enum for item types
+
 export enum ServiceType {
   accommodation = 'accommodation',
   airport_transfer = 'airport_transfer',
