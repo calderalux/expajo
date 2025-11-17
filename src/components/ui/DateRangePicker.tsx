@@ -30,16 +30,41 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
   disabled = false,
   className,
 }) => {
+  // Get tomorrow's date to disable today
+  const tomorrow = dayjs().add(1, 'day').toDate();
+
+  // Set minimum date to tomorrow (or use provided minDate if it's later)
+  const effectiveMinDate = minDate
+    ? minDate > tomorrow
+      ? minDate
+      : tomorrow
+    : tomorrow;
+
+  // Convert Date values to string format for Mantine
+  const stringValue: [string | null, string | null] = [
+    value[0] ? value[0].toISOString().split('T')[0] : null,
+    value[1] ? value[1].toISOString().split('T')[0] : null,
+  ];
+
+  // Handle Mantine's string-based onChange
+  const handleChange = (newValue: [string | null, string | null]) => {
+    const dateValue: [Date | null, Date | null] = [
+      newValue[0] ? new Date(newValue[0]) : null,
+      newValue[1] ? new Date(newValue[1]) : null,
+    ];
+    onChange(dateValue);
+  };
+
   return (
     <div className="w-full">
       {label && <label className="label">{label}</label>}
 
       <DatePickerInput
         type="range"
-        value={value}
-        onChange={(dates) => onChange(dates as [Date | null, Date | null])}
+        value={stringValue}
+        onChange={handleChange}
         placeholder={placeholder}
-        minDate={minDate}
+        minDate={effectiveMinDate}
         maxDate={maxDate}
         disabled={disabled}
         classNames={{

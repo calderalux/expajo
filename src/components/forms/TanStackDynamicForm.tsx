@@ -10,6 +10,7 @@ import { cn } from '@/utils/cn';
 import { Button } from '@/components/ui/Button';
 import { ClientWrapper } from '@/components/ClientWrapper';
 import { z } from 'zod';
+import dayjs from 'dayjs';
 
 export interface FormFieldConfig {
   name: string;
@@ -175,6 +176,7 @@ export function TanStackDynamicForm<T extends z.ZodType>({
                   leftSection={field.icon}
                   required={field.required}
                   error={errorMessage}
+                  minDate={dayjs().add(1, 'day').toDate()}
                   styles={{
                     input: {
                       height: '3rem',
@@ -249,7 +251,7 @@ export function TanStackDynamicForm<T extends z.ZodType>({
                     }}
                     leftSection={field.icon}
                     required={field.required}
-                    minDate={new Date()}
+                    minDate={dayjs().add(1, 'day').toDate()}
                     allowSingleDateInRange={false}
                     error={errorMessage}
                     valueFormat="MMM. D, YYYY"
@@ -429,8 +431,9 @@ export function TanStackDynamicForm<T extends z.ZodType>({
                         new Set(prev).add('travel_dates')
                       );
 
-                      // Trigger validation to show errors for all fields
-                      form.handleSubmit();
+                      // Don't call form.handleSubmit() as it sets isSubmitting to true
+                      // Just trigger validation to show errors
+                      form.validateAllFields('change');
                     }
                   } else if (action.onClick) {
                     action.onClick();
@@ -441,11 +444,15 @@ export function TanStackDynamicForm<T extends z.ZodType>({
                 }
                 isLoading={
                   action.loading ||
-                  (action.type === 'primary' && form.state.isSubmitting)
+                  (action.type === 'primary' &&
+                    form.state.isSubmitting &&
+                    form.state.isValid)
                 }
                 className="flex-1"
               >
-                {action.type === 'primary' && form.state.isSubmitting
+                {action.type === 'primary' &&
+                form.state.isSubmitting &&
+                form.state.isValid
                   ? 'Submitting...'
                   : action.label}
               </Button>

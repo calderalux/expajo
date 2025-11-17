@@ -5,9 +5,7 @@ import { z } from 'zod';
 
 // Plan request form schema using Zod - core fields only
 export const planRequestSchema = z.object({
-  location: z
-    .string()
-    .min(1, 'Location is required'),
+  location: z.string().min(1, 'Location is required'),
   travel_dates: z
     .array(
       z.union([
@@ -102,7 +100,7 @@ export const planRequestFields: FormFieldConfig[] = [
     required: true,
     options: Array.from({ length: 20 }, (_, i) => ({
       value: (i + 1).toString(),
-      label: i === 0 ? '1 Adult' : `${i + 1} Adults`,
+      label: (i + 1).toString(),
     })),
   },
 ];
