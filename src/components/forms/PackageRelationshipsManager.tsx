@@ -1,24 +1,24 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
-import { 
-  Plus, 
-  Search, 
-  X, 
-  Edit, 
-  Trash2, 
+import {
+  Plus,
+  Search,
+  X,
+  Edit,
+  Trash2,
   GripVertical,
   MapPin,
   Clock,
   DollarSign,
   Star,
   Check,
-  X as XIcon
+  X as XIcon,
 } from 'lucide-react';
 import { Experience } from '@/lib/services/experiences';
 import { PackageItemOption } from '@/lib/services/package-item-options';
@@ -60,73 +60,84 @@ export function PackageRelationshipsManager({
   packageId,
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
 }: PackageRelationshipsManagerProps) {
-  const [activeTab, setActiveTab] = useState<'experiences' | 'options'>('experiences');
-  
+  const [activeTab, setActiveTab] = useState<'experiences' | 'options'>(
+    'experiences'
+  );
+
   // Experiences state
-  const [experiences, setExperiences] = useState<PackageExperienceWithDetails[]>([]);
-  const [availableExperiences, setAvailableExperiences] = useState<Experience[]>([]);
+  const [experiences, setExperiences] = useState<
+    PackageExperienceWithDetails[]
+  >([]);
+  const [availableExperiences, setAvailableExperiences] = useState<
+    Experience[]
+  >([]);
   const [experiencesLoading, setExperiencesLoading] = useState(false);
   const [showExperienceModal, setShowExperienceModal] = useState(false);
-  const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+  const [selectedExperience, setSelectedExperience] =
+    useState<Experience | null>(null);
   const [experienceSearch, setExperienceSearch] = useState('');
-  const [experienceCategory, setExperienceCategory] = useState('All Categories');
-  
+  const [experienceCategory, setExperienceCategory] =
+    useState('All Categories');
+
   // Options state
-  const [optionMappings, setOptionMappings] = useState<PackageOptionMappingWithDetails[]>([]);
-  const [availableOptions, setAvailableOptions] = useState<PackageItemOption[]>([]);
+  const [optionMappings, setOptionMappings] = useState<
+    PackageOptionMappingWithDetails[]
+  >([]);
+  const [availableOptions, setAvailableOptions] = useState<PackageItemOption[]>(
+    []
+  );
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [showOptionModal, setShowOptionModal] = useState(false);
-  const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set());
+  const [selectedOptions, setSelectedOptions] = useState<Set<string>>(
+    new Set()
+  );
   const [optionSearch, setOptionSearch] = useState('');
   const [optionItemType, setOptionItemType] = useState('');
 
-  const categories = [
-    'All Categories',
-    ...Object.values(serviceTypeToLabel),
-  ];
+  const categories = ['All Categories', ...Object.values(serviceTypeToLabel)];
 
   const itemTypes = [
     { value: '', label: 'All Types' },
     ...Object.entries(serviceTypeToLabel).map(([key, label]) => ({
       value: key,
-      label: label
-    }))
+      label: label,
+    })),
   ];
 
   // Load package relationships
-  useEffect(() => {
-    if (isOpen && packageId) {
-      loadPackageRelationships();
-    }
-  }, [isOpen, packageId]);
-
-  const loadPackageRelationships = async () => {
+  const loadPackageRelationships = useCallback(async () => {
     try {
       const sessionToken = localStorage.getItem('admin_session_token');
-      
+
       // Load experiences
-      const experiencesResponse = await fetch(`/api/admin/packages/${packageId}/experiences`, {
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
+      const experiencesResponse = await fetch(
+        `/api/admin/packages/${packageId}/experiences`,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
       if (experiencesResponse.ok) {
         const experiencesResult = await experiencesResponse.json();
         setExperiences(experiencesResult.data || []);
       }
 
       // Load options
-      const optionsResponse = await fetch(`/api/admin/packages/${packageId}/options`, {
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
+      const optionsResponse = await fetch(
+        `/api/admin/packages/${packageId}/options`,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
       if (optionsResponse.ok) {
         const optionsResult = await optionsResponse.json();
         setOptionMappings(optionsResult.data || []);
@@ -134,32 +145,46 @@ export function PackageRelationshipsManager({
     } catch (error) {
       console.error('Error loading package relationships:', error);
     }
-  };
+  }, [packageId]);
+
+  useEffect(() => {
+    if (isOpen && packageId) {
+      loadPackageRelationships();
+    }
+  }, [isOpen, packageId, loadPackageRelationships]);
 
   const loadAvailableExperiences = async () => {
     setExperiencesLoading(true);
     try {
       const sessionToken = localStorage.getItem('admin_session_token');
       const params = new URLSearchParams();
-      
+
       if (experienceSearch) params.set('search', experienceSearch);
-      if (experienceCategory !== 'All Categories') params.set('category', experienceCategory);
+      if (experienceCategory !== 'All Categories')
+        params.set('category', experienceCategory);
       params.set('limit', '50');
       params.set('is_active', 'true');
 
-      const response = await fetch(`/api/admin/experiences?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(
+        `/api/admin/experiences?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const result = await response.json();
       if (result.success) {
         // Filter out already selected experiences
-        const selectedIds = new Set(experiences.map(exp => exp.experience_id));
+        const selectedIds = new Set(
+          experiences.map((exp) => exp.experience_id)
+        );
         setAvailableExperiences(
-          (result.data || []).filter((exp: Experience) => !selectedIds.has(exp.id))
+          (result.data || []).filter(
+            (exp: Experience) => !selectedIds.has(exp.id)
+          )
         );
       }
     } catch (error) {
@@ -174,25 +199,32 @@ export function PackageRelationshipsManager({
     try {
       const sessionToken = localStorage.getItem('admin_session_token');
       const params = new URLSearchParams();
-      
+
       if (optionSearch) params.set('search', optionSearch);
       if (optionItemType) params.set('item_type', optionItemType);
       params.set('limit', '100');
       params.set('is_active', 'true');
 
-      const response = await fetch(`/api/admin/package-item-options?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(
+        `/api/admin/package-item-options?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const result = await response.json();
       if (result.success) {
         // Filter out already selected options
-        const selectedIds = new Set(optionMappings.map(mapping => mapping.option_id));
+        const selectedIds = new Set(
+          optionMappings.map((mapping) => mapping.option_id)
+        );
         setAvailableOptions(
-          (result.data || []).filter((option: PackageItemOption) => !selectedIds.has(option.id))
+          (result.data || []).filter(
+            (option: PackageItemOption) => !selectedIds.has(option.id)
+          )
         );
       }
     } catch (error) {
@@ -205,19 +237,22 @@ export function PackageRelationshipsManager({
   const handleAddExperience = async (experience: Experience) => {
     try {
       const sessionToken = localStorage.getItem('admin_session_token');
-      const response = await fetch(`/api/admin/packages/${packageId}/experiences`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          experience_id: experience.id,
-          is_optional: false,
-          is_included_in_price: true,
-          sort_order: experiences.length,
-        }),
-      });
+      const response = await fetch(
+        `/api/admin/packages/${packageId}/experiences`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${sessionToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            experience_id: experience.id,
+            is_optional: false,
+            is_included_in_price: true,
+            sort_order: experiences.length,
+          }),
+        }
+      );
 
       const result = await response.json();
       if (result.success) {
@@ -235,19 +270,26 @@ export function PackageRelationshipsManager({
   };
 
   const handleRemoveExperience = async (experienceId: string) => {
-    if (!confirm('Are you sure you want to remove this experience from the package?')) {
+    if (
+      !confirm(
+        'Are you sure you want to remove this experience from the package?'
+      )
+    ) {
       return;
     }
 
     try {
       const sessionToken = localStorage.getItem('admin_session_token');
-      const response = await fetch(`/api/admin/packages/${packageId}/experiences?experience_id=${experienceId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(
+        `/api/admin/packages/${packageId}/experiences?experience_id=${experienceId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${sessionToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const result = await response.json();
       if (result.success) {
@@ -270,7 +312,7 @@ export function PackageRelationshipsManager({
       const response = await fetch(`/api/admin/packages/${packageId}/options`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${sessionToken}`,
+          Authorization: `Bearer ${sessionToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -294,19 +336,24 @@ export function PackageRelationshipsManager({
   };
 
   const handleRemoveOption = async (optionId: string) => {
-    if (!confirm('Are you sure you want to remove this option from the package?')) {
+    if (
+      !confirm('Are you sure you want to remove this option from the package?')
+    ) {
       return;
     }
 
     try {
       const sessionToken = localStorage.getItem('admin_session_token');
-      const response = await fetch(`/api/admin/packages/${packageId}/options?option_id=${optionId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(
+        `/api/admin/packages/${packageId}/options?option_id=${optionId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${sessionToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const result = await response.json();
       if (result.success) {
@@ -389,7 +436,9 @@ export function PackageRelationshipsManager({
 
             {experiences.length === 0 ? (
               <Card className="p-6 text-center">
-                <div className="text-gray-500 mb-4">No experiences added to this package</div>
+                <div className="text-gray-500 mb-4">
+                  No experiences added to this package
+                </div>
                 <Button
                   onClick={() => {
                     loadAvailableExperiences();
@@ -407,7 +456,9 @@ export function PackageRelationshipsManager({
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <h4 className="font-semibold text-gray-900">{exp.experience.title}</h4>
+                          <h4 className="font-semibold text-gray-900">
+                            {exp.experience.title}
+                          </h4>
                           <div className="flex items-center gap-1">
                             {exp.is_optional && (
                               <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
@@ -443,7 +494,9 @@ export function PackageRelationshipsManager({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleRemoveExperience(exp.experience_id)}
+                          onClick={() =>
+                            handleRemoveExperience(exp.experience_id)
+                          }
                           className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 size={16} />
@@ -476,7 +529,9 @@ export function PackageRelationshipsManager({
 
             {optionMappings.length === 0 ? (
               <Card className="p-6 text-center">
-                <div className="text-gray-500 mb-4">No options added to this package</div>
+                <div className="text-gray-500 mb-4">
+                  No options added to this package
+                </div>
                 <Button
                   onClick={() => {
                     loadAvailableOptions();
@@ -507,10 +562,16 @@ export function PackageRelationshipsManager({
                             {formatPrice(mapping.package_item_option.price)}
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className={`w-2 h-2 rounded-full ${
-                              mapping.package_item_option.is_active ? 'bg-green-500' : 'bg-red-500'
-                            }`} />
-                            {mapping.package_item_option.is_active ? 'Active' : 'Inactive'}
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                mapping.package_item_option.is_active
+                                  ? 'bg-green-500'
+                                  : 'bg-red-500'
+                              }`}
+                            />
+                            {mapping.package_item_option.is_active
+                              ? 'Active'
+                              : 'Inactive'}
                           </div>
                         </div>
                       </div>
@@ -554,7 +615,7 @@ export function PackageRelationshipsManager({
                 className="flex-1"
               />
               <Select
-                options={categories.map(cat => ({ value: cat, label: cat }))}
+                options={categories.map((cat) => ({ value: cat, label: cat }))}
                 value={experienceCategory}
                 onChange={(value) => setExperienceCategory(value)}
                 className="w-48"
@@ -565,7 +626,9 @@ export function PackageRelationshipsManager({
               {experiencesLoading ? (
                 <div className="text-center py-8">Loading experiences...</div>
               ) : availableExperiences.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">No experiences found</div>
+                <div className="text-center py-8 text-gray-500">
+                  No experiences found
+                </div>
               ) : (
                 availableExperiences.map((experience) => (
                   <Card
@@ -640,13 +703,17 @@ export function PackageRelationshipsManager({
               {optionsLoading ? (
                 <div className="text-center py-8">Loading options...</div>
               ) : availableOptions.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">No options found</div>
+                <div className="text-center py-8 text-gray-500">
+                  No options found
+                </div>
               ) : (
                 availableOptions.map((option) => (
                   <Card
                     key={option.id}
                     className={`p-4 cursor-pointer transition-colors ${
-                      selectedOptions.has(option.id) ? 'bg-primary/10 border-primary' : 'hover:bg-gray-50'
+                      selectedOptions.has(option.id)
+                        ? 'bg-primary/10 border-primary'
+                        : 'hover:bg-gray-50'
                     }`}
                     onClick={() => {
                       const newSelected = new Set(selectedOptions);
@@ -679,9 +746,11 @@ export function PackageRelationshipsManager({
                             {formatPrice(option.price)}
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className={`w-2 h-2 rounded-full ${
-                              option.is_active ? 'bg-green-500' : 'bg-red-500'
-                            }`} />
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                option.is_active ? 'bg-green-500' : 'bg-red-500'
+                              }`}
+                            />
                             {option.is_active ? 'Active' : 'Inactive'}
                           </div>
                         </div>

@@ -8,7 +8,7 @@ import { packageItemOptionUpdateSchema } from '@/lib/validations/package-item-op
 // GET /api/admin/package-item-options/[id] - Get package item option by ID with caching
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authCheck = await checkAdminAuth(req);
@@ -16,8 +16,8 @@ export async function GET(
       return NextResponse.json(authCheck, { status: 401 });
     }
 
-    const { id } = params;
-    
+    const { id } = await params;
+
     // Create cache key
     const cacheKey = CacheKeys.packageItemOptions.byId(id);
 
@@ -32,19 +32,23 @@ export async function GET(
     }
 
     // Fetch from database
-    const packageItemOption = await PackageItemOptionService.getPackageItemOptionById(id);
+    const packageItemOption =
+      await PackageItemOptionService.getPackageItemOptionById(id);
 
     if (!packageItemOption) {
-      return NextResponse.json({
-        success: false,
-        error: 'Package item option not found',
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Package item option not found',
+        },
+        { status: 404 }
+      );
     }
 
     // Cache the result for 10 minutes
-    await CacheService.set(cacheKey, packageItemOption, { 
+    await CacheService.set(cacheKey, packageItemOption, {
       ttl: 600,
-      tags: [CacheTags.packageItemOptions]
+      tags: [CacheTags.packageItemOptions],
     });
 
     return NextResponse.json({
@@ -63,7 +67,7 @@ export async function GET(
 // PUT /api/admin/package-item-options/[id] - Update package item option with cache invalidation
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authCheck = await checkAdminAuth(req);
@@ -72,27 +76,35 @@ export async function PUT(
     }
 
     const body = await req.json();
-    
+    const { id } = await params;
+
     // Validate request body
     const validationResult = packageItemOptionUpdateSchema.safeParse({
       ...body,
-      id: params.id,
+      id,
     });
-    
+
     if (!validationResult.success) {
-      return NextResponse.json({
-        success: false,
-        error: 'Validation failed',
-        details: validationResult.error.errors,
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validation failed',
+          details: validationResult.error.errors,
+        },
+        { status: 400 }
+      );
     }
 
-    const packageItemOption = await PackageItemOptionService.updatePackageItemOption(params.id, validationResult.data);
+    const packageItemOption =
+      await PackageItemOptionService.updatePackageItemOption(
+        id,
+        validationResult.data
+      );
 
     // Invalidate package item options cache
     await CacheService.invalidateByTags([CacheTags.packageItemOptions]);
     // Also invalidate specific option cache
-    await CacheService.delete(CacheKeys.packageItemOptions.byId(params.id));
+    await CacheService.delete(CacheKeys.packageItemOptions.byId(id));
 
     return NextResponse.json({
       success: true,
@@ -111,7 +123,7 @@ export async function PUT(
 // DELETE /api/admin/package-item-options/[id] - Delete package item option with cache invalidation
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authCheck = await checkAdminAuth(req);
@@ -119,12 +131,13 @@ export async function DELETE(
       return NextResponse.json(authCheck, { status: 401 });
     }
 
-    await PackageItemOptionService.deletePackageItemOption(params.id);
+    const { id } = await params;
+    await PackageItemOptionService.deletePackageItemOption(id);
 
     // Invalidate package item options cache
     await CacheService.invalidateByTags([CacheTags.packageItemOptions]);
     // Also invalidate specific option cache
-    await CacheService.delete(CacheKeys.packageItemOptions.byId(params.id));
+    await CacheService.delete(CacheKeys.packageItemOptions.byId(id));
 
     return NextResponse.json({
       success: true,

@@ -2,9 +2,12 @@ import { createServerClient } from '@/lib/supabase';
 import { Database } from '@/types/database';
 import { CacheService, CacheKeys, CacheTags } from '@/lib/services/cache';
 
-export type PackageExperience = Database['public']['Tables']['package_experiences']['Row'];
-export type PackageExperienceInsert = Database['public']['Tables']['package_experiences']['Insert'];
-export type PackageExperienceUpdate = Database['public']['Tables']['package_experiences']['Update'];
+export type PackageExperience =
+  Database['public']['Tables']['package_experiences']['Row'];
+export type PackageExperienceInsert =
+  Database['public']['Tables']['package_experiences']['Insert'];
+export type PackageExperienceUpdate =
+  Database['public']['Tables']['package_experiences']['Update'];
 
 export interface PackageExperienceWithDetails extends PackageExperience {
   experience: {
@@ -23,7 +26,9 @@ export class PackageExperienceService {
   private static client = createServerClient();
 
   // Get experiences for a package
-  static async getPackageExperiences(packageId: string): Promise<PackageExperienceWithDetails[]> {
+  static async getPackageExperiences(
+    packageId: string
+  ): Promise<PackageExperienceWithDetails[]> {
     const cacheKey = CacheKeys.packageExperiences.byPackageId(packageId);
 
     return CacheService.getOrSet(
@@ -31,7 +36,8 @@ export class PackageExperienceService {
       async () => {
         const { data, error } = await this.client
           .from('package_experiences')
-          .select(`
+          .select(
+            `
             *,
             experience:experiences(
               id,
@@ -43,17 +49,20 @@ export class PackageExperienceService {
               category,
               image_urls
             )
-          `)
+          `
+          )
           .eq('package_id', packageId)
           .order('sort_order', { ascending: true });
 
         if (error) {
-          throw new Error(`Failed to fetch package experiences: ${error.message}`);
+          throw new Error(
+            `Failed to fetch package experiences: ${error.message}`
+          );
         }
 
-        return (data || []).map(item => ({
+        return (data || []).map((item: any) => ({
           ...item,
-          experience: item.experience as any
+          experience: item.experience as any,
         }));
       },
       {
@@ -73,7 +82,7 @@ export class PackageExperienceService {
       sort_order?: number;
     } = {}
   ): Promise<PackageExperience> {
-    const { data, error } = await this.client
+    const { data, error } = await (this.client as any)
       .from('package_experiences')
       .insert({
         package_id: packageId,
@@ -90,7 +99,10 @@ export class PackageExperienceService {
     }
 
     // Invalidate caches
-    await CacheService.invalidateByTags([CacheTags.packageExperiences, CacheTags.packages]);
+    await CacheService.invalidateByTags([
+      CacheTags.packageExperiences,
+      CacheTags.packages,
+    ]);
 
     return data;
   }
@@ -100,18 +112,23 @@ export class PackageExperienceService {
     packageId: string,
     experienceId: string
   ): Promise<void> {
-    const { error } = await this.client
+    const { error } = await (this.client as any)
       .from('package_experiences')
       .delete()
       .eq('package_id', packageId)
       .eq('experience_id', experienceId);
 
     if (error) {
-      throw new Error(`Failed to remove experience from package: ${error.message}`);
+      throw new Error(
+        `Failed to remove experience from package: ${error.message}`
+      );
     }
 
     // Invalidate caches
-    await CacheService.invalidateByTags([CacheTags.packageExperiences, CacheTags.packages]);
+    await CacheService.invalidateByTags([
+      CacheTags.packageExperiences,
+      CacheTags.packages,
+    ]);
   }
 
   // Update package experience
@@ -120,7 +137,7 @@ export class PackageExperienceService {
     experienceId: string,
     updates: Partial<PackageExperienceUpdate>
   ): Promise<PackageExperience> {
-    const { data, error } = await this.client
+    const { data, error } = await (this.client as any)
       .from('package_experiences')
       .update({
         ...updates,
@@ -136,7 +153,10 @@ export class PackageExperienceService {
     }
 
     // Invalidate caches
-    await CacheService.invalidateByTags([CacheTags.packageExperiences, CacheTags.packages]);
+    await CacheService.invalidateByTags([
+      CacheTags.packageExperiences,
+      CacheTags.packages,
+    ]);
 
     return data;
   }
@@ -146,29 +166,36 @@ export class PackageExperienceService {
     packageId: string,
     experienceOrder: { experience_id: string; sort_order: number }[]
   ): Promise<void> {
-    const updates = experienceOrder.map(item => ({
+    const updates = experienceOrder.map((item) => ({
       package_id: packageId,
       experience_id: item.experience_id,
       sort_order: item.sort_order,
     }));
 
     // Use upsert to update sort orders
-    const { error } = await this.client
+    const { error } = await (this.client as any)
       .from('package_experiences')
       .upsert(updates, {
         onConflict: 'package_id,experience_id',
       });
 
     if (error) {
-      throw new Error(`Failed to reorder package experiences: ${error.message}`);
+      throw new Error(
+        `Failed to reorder package experiences: ${error.message}`
+      );
     }
 
     // Invalidate caches
-    await CacheService.invalidateByTags([CacheTags.packageExperiences, CacheTags.packages]);
+    await CacheService.invalidateByTags([
+      CacheTags.packageExperiences,
+      CacheTags.packages,
+    ]);
   }
 
   // Get packages for an experience
-  static async getExperiencePackages(experienceId: string): Promise<PackageExperience[]> {
+  static async getExperiencePackages(
+    experienceId: string
+  ): Promise<PackageExperience[]> {
     const cacheKey = CacheKeys.packageExperiences.byExperienceId(experienceId);
 
     return CacheService.getOrSet(
@@ -181,7 +208,9 @@ export class PackageExperienceService {
           .order('created_at', { ascending: false });
 
         if (error) {
-          throw new Error(`Failed to fetch experience packages: ${error.message}`);
+          throw new Error(
+            `Failed to fetch experience packages: ${error.message}`
+          );
         }
 
         return data || [];

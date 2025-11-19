@@ -8,7 +8,8 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
 // Singleton service client for better performance
-let serverClientInstance: ReturnType<typeof createClient<Database>> | null = null;
+let serverClientInstance: ReturnType<typeof createClient<Database>> | null =
+  null;
 
 // Server-side Supabase client (bypasses RLS) - Singleton pattern
 export const createServerClient = () => {
@@ -17,12 +18,16 @@ export const createServerClient = () => {
   }
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  
+
   if (!serviceKey) {
-    console.error('SUPABASE_SERVICE_ROLE_KEY is not set in environment variables');
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for server-side operations');
+    console.error(
+      'SUPABASE_SERVICE_ROLE_KEY is not set in environment variables'
+    );
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY is required for server-side operations'
+    );
   }
-  
+
   serverClientInstance = createClient<Database>(supabaseUrl, serviceKey);
   return serverClientInstance;
 };
@@ -32,24 +37,28 @@ export enum BookingStatus {
   PENDING = 'pending',
   CONFIRMED = 'confirmed',
   CANCELLED = 'cancelled',
-  COMPLETED = 'completed'
+  COMPLETED = 'completed',
 }
 
 export enum PaymentStatus {
   PENDING = 'pending',
   PAID = 'paid',
   FAILED = 'failed',
-  REFUNDED = 'refunded'
+  REFUNDED = 'refunded',
 }
 
 export enum PartnerStatus {
   PENDING = 'pending',
   VERIFIED = 'verified',
   SUSPENDED = 'suspended',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
 }
 
 export enum MembershipTier {
   BASIC = 'basic',
+  PREMIUM = 'premium',
+  VIP = 'vip',
   BLACK = 'black',
 }
 
@@ -63,7 +72,7 @@ export enum PackageCategory {
   LUXURY = 'luxury',
   BEACH = 'beach',
   CITY = 'city',
-  NATURE = 'nature'
+  NATURE = 'nature',
 }
 
 export enum ItemType {
@@ -85,4 +94,3 @@ export enum ItemType {
   festivals = 'festivals',
   attractions = 'attractions',
 }
-
